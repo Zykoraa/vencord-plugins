@@ -1,10 +1,11 @@
 # Vencord plugins
 
-Four userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
+Five userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
 locally — nothing is sent anywhere, and nothing here needs an API key or an external tracking server.
 
 | Plugin | What it does |
 | --- | --- |
+| [ServerShapes](#servershapes) | 16 server icon shapes with contour-following glows, gradients, per-server styles, and audio reactivity |
 | [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers with native PipeWire & BetterBanana Spotify routing |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
@@ -17,7 +18,7 @@ Vencord loads userplugins from a development checkout, so you need one:
 building it.
 
 ```sh
-git clone https://github.com/<you>/vencord-plugins.git
+git clone https://github.com/Zykoraa/vencord-plugins.git
 cd vencord-plugins
 ./install.sh /path/to/Vencord          # copies the plugins into src/userplugins
 cd /path/to/Vencord && pnpm build
@@ -30,6 +31,21 @@ If you'd rather keep this repo as the single source of truth, use `./install.sh 
 symlinks instead of copying and writes a local, gitignored `tsconfig.json` pointing at your
 checkout — esbuild resolves symlinks to their real path *before* it looks for tsconfig path
 aliases, so without that file a linked install can't resolve `@utils/*`, `@webpack/*` and friends.
+
+## ServerShapes
+
+Give the server list a custom look with 16 shapes and a glow that follows each outline.
+
+By [Eve (@Zykoraa)](https://github.com/Zykoraa) and
+[Demonjane (@Demonjane-jpg)](https://github.com/Demonjane-jpg)
+([Discord](https://discord.com/users/725525081555730542)).
+
+- Four glow styles with solid colours, gradients, or colours sampled from each server icon
+- Soft light that can extend past the server rail without covering server badges
+- Live settings preview, exact numeric controls, per-server overrides, presets, and undo/redo
+- Optional hover effects, animation, avatar styling, and audio reactivity
+
+[Installation, settings, and details →](serverShapes/README.md)
 
 ## CallWrapped
 
@@ -108,7 +124,7 @@ Turns your Discord window into a clean, hardware-accelerated audio reactive canv
 
 ## A note on what these can see
 
-All four only use data Discord has already handed the client or local audio inputs you explicitly select:
+These plugins only use data Discord has already handed the client or local audio inputs you explicitly select:
 who is speaking in a call you're in, your own connection stats, the messages already loaded in a channel,
 or local audio streams via Web Audio API. Nothing leaves your machine — CallWrapped's saved reports, the
 HUD positions, and AudioReactiveDisco's settings live in Vencord's local storage.
