@@ -1,0 +1,161 @@
+#vc-voice-quality-hud {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1002;
+}
+
+.vc-vq-hud {
+    position: fixed;
+    width: 240px;
+    pointer-events: auto;
+    background: var(--background-floating, #111214);
+    border: 1px solid var(--background-modifier-accent, rgb(255 255 255 / 8%));
+    border-radius: 10px;
+    box-shadow: var(--elevation-high, 0 8px 16px rgb(0 0 0 / 24%));
+    color: var(--text-normal, #dbdee1);
+    font-size: 12px;
+    padding: 8px 10px 10px;
+    user-select: none;
+}
+
+.vc-vq-hud.vc-vq-collapsed {
+    width: 150px;
+    padding-bottom: 8px;
+}
+
+.vc-vq-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    cursor: grab;
+    touch-action: none;
+}
+
+.vc-vq-header:active {
+    cursor: grabbing;
+}
+
+.vc-vq-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    flex: 0 0 auto;
+}
+
+.vc-vq-title {
+    flex: 1;
+    font-weight: 600;
+    color: var(--header-primary, #f2f3f5);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-vq-icon-button {
+    background: none;
+    border: none;
+    color: var(--text-muted, #949ba4);
+    cursor: pointer;
+    padding: 0 2px;
+    font-size: 11px;
+    line-height: 1;
+}
+
+.vc-vq-icon-button:hover {
+    color: var(--interactive-hover, #dbdee1);
+}
+
+.vc-vq-ping-row {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    margin-top: 6px;
+}
+
+.vc-vq-ping {
+    font-size: 26px;
+    font-weight: 700;
+    line-height: 1;
+    font-variant-numeric: tabular-nums;
+}
+
+.vc-vq-ping-unit {
+    font-size: 12px;
+    color: var(--text-muted, #949ba4);
+    margin-left: 3px;
+}
+
+.vc-vq-ping-range {
+    text-align: right;
+    color: var(--text-muted, #949ba4);
+    font-variant-numeric: tabular-nums;
+    line-height: 1.35;
+    font-size: 11px;
+}
+
+.vc-vq-spark {
+    width: 100%;
+    height: 32px;
+    display: block;
+    margin: 6px 0 2px;
+}
+
+.vc-vq-metrics {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px 4px;
+    margin-top: 4px;
+}
+
+.vc-vq-metric-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: var(--text-muted, #949ba4);
+}
+
+.vc-vq-metric-value {
+    font-variant-numeric: tabular-nums;
+    font-weight: 600;
+}
+
+.vc-vq-footer {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    margin-top: 8px;
+    padding-top: 6px;
+    border-top: 1px solid var(--background-modifier-accent, rgb(255 255 255 / 8%));
+    color: var(--text-muted, #949ba4);
+    font-size: 10px;
+}
+
+.vc-vq-footer span:first-child {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-vq-compact {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+    margin-top: 4px;
+}
+
+.vc-vq-compact-ping {
+    font-size: 18px;
+    font-weight: 700;
+    font-variant-numeric: tabular-nums;
+}
+
+.vc-vq-compact-unit {
+    color: var(--text-muted, #949ba4);
+}
+
+.vc-vq-compact-loss {
+    margin-left: auto;
+    color: var(--text-muted, #949ba4);
+    font-variant-numeric: tabular-nums;
+}
