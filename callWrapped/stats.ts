@@ -113,7 +113,8 @@ function concurrencyTime(spans: SpeakSpan[], min: number): number {
     }
     if (!events.length) return 0;
 
-    // at an equal timestamp, close before open so a hand-off isn't counted as an overlap
+    // close before open at an equal timestamp, so depth never transiently reads 2 at a
+    // hand-off. The totals come out the same either way - that segment has zero width.
     events.sort((a, b) => a[0] - b[0] || a[1] - b[1]);
 
     let depth = 0;
