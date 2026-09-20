@@ -1,0 +1,163 @@
+/* AudioReactiveDisco Ultra-High-Performance 240 FPS Pure GPU Styles */
+
+/* 1. Ambient Window Edge Glow (Edge Dancing Aura - Pure GPU Compositor 240 FPS) */
+.vc-ar-window-aura {
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 10001;
+    border: 2px solid #00f0ff;
+    box-shadow: inset 0 0 32px rgba(0, 240, 255, 0.4);
+    opacity: 0;
+    transform: translateZ(0);
+    will-change: opacity, border-color, box-shadow;
+    transition: none !important;
+}
+
+/* 2. Ambient Aurora Bloom - Soft Atmospheric Underglow */
+.vc-ar-ambient-aurora {
+    position: fixed;
+    bottom: -60px;
+    left: 10%;
+    width: 80%;
+    height: 160px;
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9997;
+    background: radial-gradient(ellipse at center, var(--vc-ar-aurora-color, rgba(0, 240, 255, 0.2)) 0%, transparent 70%);
+    filter: blur(50px);
+    opacity: 0;
+    transform: translateZ(0);
+    will-change: opacity, background;
+    transition: opacity 0.06s ease-out;
+}
+
+/* 3. Viewport 240 FPS Hardware Canvas Dock */
+.vc-ar-viewport-canvas {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100vw;
+    height: 54px;
+    z-index: 9998;
+    pointer-events: none;
+    transform: translateZ(0);
+}
+
+/* 4. Visualizer HUD Container in Bottom Panel */
+.vc-ar-hud-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 6px 10px;
+    margin: 4px 8px;
+    border-radius: 8px;
+    background: #11121d;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    user-select: none;
+    transform: translateZ(0);
+    transition: none !important;
+}
+
+.vc-ar-hud-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-size: 10px;
+    font-weight: 700;
+    letter-spacing: 0.6px;
+    text-transform: uppercase;
+}
+
+.vc-ar-hud-title {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    color: #00f0ff;
+    cursor: pointer;
+}
+
+.vc-ar-hud-actions {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.vc-ar-hud-fps {
+    font-size: 9px;
+    font-weight: 800;
+    font-family: monospace;
+    color: #00ff88;
+    background: rgba(0, 255, 136, 0.12);
+    border: 1px solid rgba(0, 255, 136, 0.25);
+    padding: 1px 4px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.vc-ar-hud-fps:hover {
+    color: #ffffff;
+    background: rgba(0, 255, 136, 0.28);
+}
+
+.vc-ar-hud-device {
+    font-size: 9px;
+    font-weight: 700;
+    color: #ffe600;
+    background: rgba(255, 230, 0, 0.12);
+    border: 1px solid rgba(255, 230, 0, 0.28);
+    padding: 1px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    max-width: 100px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.vc-ar-hud-device:hover {
+    color: #ffffff;
+    background: rgba(255, 230, 0, 0.28);
+}
+
+.vc-ar-hud-style {
+    font-size: 9px;
+    font-weight: 700;
+    color: #ff7700;
+    background: rgba(255, 119, 0, 0.12);
+    border: 1px solid rgba(255, 119, 0, 0.28);
+    padding: 1px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+    white-space: nowrap;
+    text-transform: uppercase;
+}
+
+.vc-ar-hud-style:hover {
+    color: #ffffff;
+    background: rgba(255, 119, 0, 0.28);
+}
+
+.vc-ar-hud-mode {
+    font-size: 9px;
+    color: var(--text-muted, #888);
+    background: rgba(255, 255, 255, 0.08);
+    padding: 1px 5px;
+    border-radius: 4px;
+    cursor: pointer;
+}
+
+.vc-ar-hud-mode:hover {
+    color: #fff;
+    background: rgba(255, 255, 255, 0.18);
+}
+
+.vc-ar-hud-canvas {
+    width: 100%;
+    height: 28px;
+    display: block;
+    border-radius: 4px;
+    background: rgba(0, 0, 0, 0.55);
+    transform: translateZ(0);
+}

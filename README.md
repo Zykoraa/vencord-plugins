@@ -1,11 +1,11 @@
 # Vencord plugins
 
-Three userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them read Discord's
-own stores and render their own UI — nothing is sent anywhere, and nothing here needs an API key,
-a server, or a native module.
+Four userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
+locally — nothing is sent anywhere, and nothing here needs an API key or an external tracking server.
 
 | Plugin | What it does |
 | --- | --- |
+| [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers with native PipeWire & BetterBanana Spotify routing |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
 | [ReplyGraph](#replygraph) | Draws a channel's reply structure as a force-directed graph so you can untangle four conversations at once |
@@ -90,12 +90,28 @@ Useful when a channel has four conversations interleaved and you want to see whi
 
 [More detail →](replyGraph/README.md)
 
+## AudioReactiveDisco
+
+Turns your Discord window into a clean, hardware-accelerated audio reactive canvas running at up to
+240 FPS, without camera shaking, jumping chat text, or font blurring.
+
+- **Seven Visualizer Styles**: Ambient Edge Glow around your window perimeter, Full Cyber Deck,
+  Neon Spectrum Bars, Mirror Spectrum, Cyber Waveform (fluid traveling oscilloscope ribbon),
+  Ambient Aurora bloom, and Minimal Stealth.
+- **Native Spotify & BetterBanana Binding**: Automatically detects and binds to PipeWire virtual
+  sinks (`bb_spotify_source` / `bb_cable1.monitor`) on Linux so it reacts directly to your music stream.
+- **Zero-GC Hot Path**: Pure pre-allocated typed arrays in the 240 FPS render loop for zero frame stutter.
+- **HUD Controller**: Micro-panel docked in Discord's bottom panel showing real-time FPS, live micro-canvas,
+  one-click device cycling, and one-click visualizer style cycling.
+
+[More detail →](audioReactiveDisco/README.md)
+
 ## A note on what these can see
 
-All three only use data Discord has already handed the client: who is speaking in a call you're in,
-your own connection stats, and the messages already loaded in a channel you're looking at. Nothing
-leaves your machine — CallWrapped's saved reports and the HUD's position live in Vencord's local
-IndexedDB.
+All four only use data Discord has already handed the client or local audio inputs you explicitly select:
+who is speaking in a call you're in, your own connection stats, the messages already loaded in a channel,
+or local audio streams via Web Audio API. Nothing leaves your machine — CallWrapped's saved reports, the
+HUD positions, and AudioReactiveDisco's settings live in Vencord's local storage.
 
 CallWrapped does record when each person in a call spoke. That's derived from the same events that
 make the green ring appear around someone's avatar, so it's nothing the call didn't already show
