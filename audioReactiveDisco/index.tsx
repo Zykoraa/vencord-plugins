@@ -29,6 +29,7 @@ let analyserNode: AnalyserNode | null = null;
 let mediaStream: MediaStream | null = null;
 let sourceNode: MediaStreamAudioSourceNode | null = null;
 let animationFrameId: number | null = null;
+let frameTimer: ReturnType<typeof setTimeout> | null = null;
 let cleanupSettingsListener: (() => void) | null = null;
 
 let windowAuraElement: HTMLDivElement | null = null;
@@ -59,7 +60,25 @@ let rainbowHue = 180;
 let lastFrameTime = performance.now();
 let lastFPSCalcTime = performance.now();
 let frameCount = 0;
-let measuredFPS = 240;
+let measuredFPS = 0;
+let lastHudMountAttempt = 0;
+let lastColorWrite = 0;
+
+// Last value written per element and property, so frames where nothing changed
+// leave the DOM alone. Keyed weakly: a remounted element starts with no entries.
+const writtenStyles = new WeakMap<HTMLElement, Map<string, string>>();
+
+function setStyle(el: HTMLElement, prop: string, value: string) {
+    let written = writtenStyles.get(el);
+    if (!written) writtenStyles.set(el, written = new Map());
+    if (written.get(prop) === value) return;
+    written.set(prop, value);
+    el.style.setProperty(prop, value);
+}
+
+function fpsLabel(fps: number) {
+    return fps === 0 ? "UNCAPPED" : `${fps} FPS`;
+}
 
 // Pre-allocated typed arrays (ZERO garbage collection in hot path)
 // fftSize 256 gives 128 frequency bins (0 to 127) for high-precision audio analysis
@@ -396,41 +415,44 @@ async function cycleAudioDevice() {
     await switchAudioDevice(nextDev.id, nextDev.shortLabel);
 }
 
-function getColors(theme: ColorTheme, bass: number): { primary: string; secondary: string; dim: string } {
+// `dim` feeds the edge glow's box-shadow, which repaints the whole window when it
+// changes, so its alpha is fixed. The glow still pulses through its opacity.
+function getColors(theme: ColorTheme, bass: number, dt: number): { primary: string; secondary: string; dim: string } {
     switch (theme) {
         case ColorTheme.Rainbow: {
-            rainbowHue = (rainbowHue + (bass * 3.5 + 0.6)) % 360;
+            // Degrees per 60 Hz frame, scaled by dt so the speed ignores the FPS cap
+            rainbowHue = (rainbowHue + (bass * 3.5 + 0.6) * 60 * dt) % 360;
             const secHue = (rainbowHue + 75) % 360;
             return {
                 primary: `hsl(${rainbowHue.toFixed(0)}, 100%, 65%)`,
                 secondary: `hsl(${secHue.toFixed(0)}, 100%, 60%)`,
-                dim: `hsla(${rainbowHue.toFixed(0)}, 100%, 65%, ${(0.14 + bass * 0.45).toFixed(2)})`
+                dim: `hsla(${rainbowHue.toFixed(0)}, 100%, 65%, 0.4)`
             };
         }
         case ColorTheme.Cyberpunk:
             return {
                 primary: "#00f0ff",
                 secondary: "#ff0055",
-                dim: `rgba(0, 240, 255, ${(0.14 + bass * 0.45).toFixed(2)})`
+                dim: "rgba(0, 240, 255, 0.4)"
             };
         case ColorTheme.Synthwave:
             return {
                 primary: "#ff7700",
                 secondary: "#a000ff",
-                dim: `rgba(160, 0, 255, ${(0.15 + bass * 0.45).toFixed(2)})`
+                dim: "rgba(160, 0, 255, 0.4)"
             };
         case ColorTheme.Matrix:
             return {
                 primary: "#00ff66",
                 secondary: "#88ff00",
-                dim: `rgba(0, 255, 102, ${(0.14 + bass * 0.45).toFixed(2)})`
+                dim: "rgba(0, 255, 102, 0.4)"
             };
         case ColorTheme.ElectricBlue:
         default:
             return {
                 primary: "#0088ff",
                 secondary: "#bd00ff",
-                dim: `rgba(0, 136, 255, ${(0.15 + bass * 0.45).toFixed(2)})`
+                dim: "rgba(0, 136, 255, 0.4)"
             };
     }
 }
@@ -461,20 +483,40 @@ function computeProceduralBeat(t: number): { bass: number; mid: number; treble: 
     return { bass, mid, treble, level };
 }
 
-function renderFrame(now: DOMHighResTimeStamp) {
-    animationFrameId = requestAnimationFrame(renderFrame);
+// Every requestAnimationFrame wakes Discord's UI thread and compositor, even
+// one that returns straight away, so waiting out a capped frame interval with
+// rAF alone costs a wakeup per display refresh (240/s on a 240 Hz monitor).
+// Instead, most of the interval is waited out on a timer, and only the last
+// stretch uses rAF: that keeps frames aligned to vsync and still pauses the
+// loop while the window is hidden.
+function scheduleFrame() {
+    const targetFPS = settings.store.targetFPS ?? 60;
+    // Wake about one 240 Hz vsync early, so the rAF lands on the frame that is due
+    const wait = targetFPS > 0 ? 1000 / targetFPS - (performance.now() - lastFrameTime) - 4 : 0;
+    if (wait > 1) {
+        frameTimer = setTimeout(() => {
+            frameTimer = null;
+            animationFrameId = requestAnimationFrame(renderFrame);
+        }, wait);
+    } else {
+        animationFrameId = requestAnimationFrame(renderFrame);
+    }
+}
 
-    // Target Framerate throttling (if user chooses 60 or 144)
-    const targetFPS = settings.store.targetFPS ?? 240;
-    if (targetFPS > 0 && targetFPS < 240) {
-        const frameInterval = 1000 / targetFPS;
-        if (now - lastFrameTime < frameInterval - 0.75) {
-            return;
-        }
+function renderFrame(now: DOMHighResTimeStamp) {
+    animationFrameId = null;
+
+    // Skip vsyncs until the next frame is due. 0 means uncapped (every vsync).
+    const targetFPS = settings.store.targetFPS ?? 60;
+    if (targetFPS > 0 && now - lastFrameTime < 1000 / targetFPS - 0.75) {
+        scheduleFrame();
+        return;
     }
 
     const dt = Math.min(0.05, (now - (lastFrameTime || now)) / 1000);
     lastFrameTime = now;
+    // Scheduled before the frame's work so an exception cannot stop the loop
+    scheduleFrame();
 
     // Fast FPS Meter
     frameCount++;
@@ -485,14 +527,15 @@ function renderFrame(now: DOMHighResTimeStamp) {
         lastFPSCalcTime = now;
 
         if (hudFpsBadge && settings.store.showFPSCounter) {
+            // Colour against the cap, so a steady 60 of 60 reads as healthy
+            const goal = targetFPS > 0 ? targetFPS : 240;
             hudFpsBadge.textContent = `${measuredFPS} FPS`;
-            hudFpsBadge.style.color = measuredFPS >= 200 ? "#00ff88" : measuredFPS >= 120 ? "#00e1ff" : "#ffaa00";
+            hudFpsBadge.style.color = measuredFPS >= goal * 0.9 ? "#00ff88" : measuredFPS >= goal * 0.6 ? "#00e1ff" : "#ffaa00";
         }
-    }
 
-    // Auto-resume audio context if suspended (check once every ~240 frames)
-    if (frameCount % 240 === 0 && audioContext && audioContext.state === "suspended") {
-        void audioContext.resume();
+        if (audioContext && audioContext.state === "suspended") {
+            void audioContext.resume();
+        }
     }
 
     const currentMode = settings.store.mode;
@@ -530,10 +573,6 @@ function renderFrame(now: DOMHighResTimeStamp) {
         for (let i = 0; i < 128; i++) sumAll += rawFreqBuffer[i];
         level = (sumAll / 128) / 255;
 
-        if (frameCount % 480 === 0) {
-            log(`renderFrame live audio: sumAll=${sumAll.toFixed(1)}, bass=${bass.toFixed(2)}, mid=${mid.toFixed(2)}, treb=${treble.toFixed(2)}`);
-        }
-
         // 16 EQ bands with logarithmic frequency binning & high-freq auditory compensation
         for (let b = 0; b < 16; b++) {
             const [start, end] = EQ_BAND_RANGES[b];
@@ -561,8 +600,16 @@ function renderFrame(now: DOMHighResTimeStamp) {
     smoothedTreble = Math.max(treble, smoothedTreble * decay);
     smoothedLevel = Math.max(level, smoothedLevel * decay);
 
-    const colors = getColors(settings.store.colorTheme, smoothedBass);
+    const colors = getColors(settings.store.colorTheme, smoothedBass, dt);
     const style = settings.store.reactionStyle;
+
+    // Opacity is the only style written every frame: the glow layers have
+    // will-change: opacity, so the compositor applies it without a repaint.
+    // Colours do repaint (the edge glow is window-sized), so they go out at most
+    // 10 times a second, and setStyle drops unchanged ones, which for every
+    // theme except Rainbow means they are written once.
+    const writeColors = now - lastColorWrite >= 100;
+    if (writeColors) lastColorWrite = now;
 
     // 1. Ambient Window Edge Glow (Edge Dancing Aura)
     const wantsEdgeGlow = style === VisualReactionStyle.EdgeGlow ||
@@ -575,21 +622,26 @@ function renderFrame(now: DOMHighResTimeStamp) {
         }
         if (windowAuraElement) {
             const edgeAlpha = Math.min(1, (0.05 + smoothedLevel * 1.8) * (intensity / 3));
-            windowAuraElement.style.opacity = edgeAlpha.toFixed(2);
-            windowAuraElement.style.borderColor = colors.primary;
-            windowAuraElement.style.boxShadow = `inset 0 0 32px ${colors.dim}`;
+            setStyle(windowAuraElement, "opacity", edgeAlpha.toFixed(2));
+            if (writeColors) {
+                setStyle(windowAuraElement, "border-color", colors.primary);
+                setStyle(windowAuraElement, "box-shadow", `inset 0 0 32px ${colors.dim}`);
+            }
         }
     } else if (windowAuraElement) {
         unmountWindowAura();
     }
 
-    // 2. Draw Canvas HUD at 240 FPS
+    // 2. Draw Canvas HUD
     if (settings.store.showVisualizerHUD) {
-        const bottomPanels = document.querySelector<HTMLElement>('section[class*="panels"]');
-        if (bottomPanels && (!hudContainerElement || !hudContainerElement.isConnected || hudContainerElement.parentElement !== bottomPanels)) {
-            mountHUD(bottomPanels);
+        // Discord re-renders the panel section now and then, which drops the HUD.
+        // Search for it at most once a second rather than querying the whole
+        // document every frame.
+        if (!hudContainerElement?.isConnected && now - lastHudMountAttempt >= 1000) {
+            lastHudMountAttempt = now;
+            mountHUD();
         }
-        if (hudCanvas && hudCtx) {
+        if (hudCanvas && hudCtx && hudContainerElement?.isConnected) {
             drawHUDCanvas(
                 colors.primary,
                 colors.secondary,
@@ -642,15 +694,17 @@ function renderFrame(now: DOMHighResTimeStamp) {
         }
         if (ambientAuroraElement) {
             const auroraAlpha = Math.min(0.65, smoothedLevel * 1.8 * (intensity / 3));
-            ambientAuroraElement.style.opacity = auroraAlpha.toFixed(2);
-            ambientAuroraElement.style.setProperty("--vc-ar-aurora-color", colors.primary);
+            setStyle(ambientAuroraElement, "opacity", auroraAlpha.toFixed(2));
+            if (writeColors) {
+                setStyle(ambientAuroraElement, "--vc-ar-aurora-color", colors.primary);
+            }
         }
     } else if (ambientAuroraElement) {
         unmountAmbientAurora();
     }
 
-    if (hudTitleElement) {
-        hudTitleElement.style.color = colors.primary;
+    if (hudTitleElement && writeColors) {
+        setStyle(hudTitleElement, "color", colors.primary);
     }
 }
 
@@ -1222,8 +1276,8 @@ function applyReactionToggles() {
     }
 }
 
-function mountHUD(targetPanels?: HTMLElement | null) {
-    const bottomPanels = targetPanels || document.querySelector<HTMLElement>('section[class*="panels"]');
+function mountHUD() {
+    const bottomPanels = document.querySelector<HTMLElement>('section[class*="panels"]');
     if (!bottomPanels) return;
     if (hudContainerElement && hudContainerElement.isConnected && hudContainerElement.parentElement === bottomPanels) return;
 
@@ -1257,15 +1311,14 @@ function mountHUD(targetPanels?: HTMLElement | null) {
 
     const fpsBadge = document.createElement("div");
     fpsBadge.className = "vc-ar-hud-fps";
-    fpsBadge.textContent = "240 FPS";
-    fpsBadge.title = "Target FPS (Click to cycle 240 / 144 / 60 / Uncapped)";
+    fpsBadge.textContent = fpsLabel(settings.store.targetFPS);
+    fpsBadge.title = "Target FPS (Click to cycle 60 / 144 / 240 / Uncapped)";
     fpsBadge.addEventListener("click", () => {
-        const fpsList = [240, 144, 60, 0];
-        const curFps = settings.store.targetFPS ?? 240;
-        const curIdx = fpsList.indexOf(curFps);
+        const fpsList = [60, 144, 240, 0];
+        const curIdx = fpsList.indexOf(settings.store.targetFPS);
         const nextFps = fpsList[(curIdx + 1) % fpsList.length];
         settings.store.targetFPS = nextFps;
-        fpsBadge.textContent = nextFps === 0 ? "UNCAPPED" : `${nextFps} FPS`;
+        fpsBadge.textContent = fpsLabel(nextFps);
     });
     hudFpsBadge = fpsBadge;
 
@@ -1363,7 +1416,7 @@ function handleSettingChange(key: string, val: any) {
         else unmountHUD();
     } else if (key === "targetFPS") {
         if (hudFpsBadge) {
-            hudFpsBadge.textContent = val === 0 ? "UNCAPPED" : `${val} FPS`;
+            hudFpsBadge.textContent = fpsLabel(val);
         }
     } else if (key === "glowWindow" || key === "ambientAurora") {
         applyReactionToggles();
@@ -1377,7 +1430,7 @@ function onPrefixSettingChange(data: any, path: string) {
 
 export default definePlugin({
     name: "AudioReactiveDisco",
-    description: "Ultra-fast 240 FPS audio reactivity with native BetterBanana & Spotify routing support!",
+    description: "Audio reactive visualizers (up to 240 FPS) with native BetterBanana & Spotify routing support!",
     authors: [{
         name: "Eve",
         id: 0n
@@ -1387,6 +1440,11 @@ export default definePlugin({
     managedStyle,
 
     start() {
+        if (!settings.store.fpsDefaultMigrated) {
+            if (settings.store.targetFPS === 240) settings.store.targetFPS = 60;
+            settings.store.fpsDefaultMigrated = true;
+        }
+
         applyDOMToggles();
         void setupAudioSource(settings.store.mode);
 
@@ -1407,6 +1465,10 @@ export default definePlugin({
         if (animationFrameId) {
             cancelAnimationFrame(animationFrameId);
             animationFrameId = null;
+        }
+        if (frameTimer) {
+            clearTimeout(frameTimer);
+            frameTimer = null;
         }
 
         cleanupSettingsListener?.();

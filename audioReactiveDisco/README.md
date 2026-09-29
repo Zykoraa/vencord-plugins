@@ -1,6 +1,6 @@
 # AudioReactiveDisco
 
-Hardware-accelerated 240 FPS audio reactive visualizers for Discord, designed with native Linux PipeWire / BetterBanana Spotify routing support.
+Audio reactive visualizers (60 FPS by default, up to 240) for Discord, designed with native Linux PipeWire / BetterBanana Spotify routing support.
 
 No camera shaking, no bouncing chat text, and no layout instability — pure GPU compositor animations and Canvas 2D hardware-accelerated rendering.
 
@@ -10,7 +10,7 @@ Switch styles directly from Discord Settings or click the **style badge** in the
 
 | Style | Description |
 | --- | --- |
-| **🌌 Ambient Edge Glow** *(Default)* | The user-favorite window perimeter aura (`inset 0 0 32px` neon glow). Pulses and breathes dynamically to audio dynamics and bass kicks at locked 240 FPS via GPU compositor opacity. |
+| **🌌 Ambient Edge Glow** *(Default)* | The user-favorite window perimeter aura (`inset 0 0 32px` neon glow). Pulses and breathes dynamically to audio dynamics and bass kicks through GPU compositor opacity. |
 | **🌟 Full Cyber Deck** | The Ambient Edge Glow **plus** the 24-column rounded neon equalizer dock along the bottom edge of the Discord window. |
 | **📊 Neon Spectrum Bars** | 24 centered rounded neon EQ columns with floating peak decay caps docked along the bottom edge. |
 | **🪞 Mirror Spectrum** | Symmetrical dual-mirrored center-out spectrum bars docked along the bottom edge. |
@@ -32,7 +32,7 @@ Built specifically for high-fidelity audio workflows:
 A sleek micro-panel docked in Discord's bottom left user bar:
 
 - **Live Equalizer / Waveform**: Real-time micro-visualizer canvas.
-- **240 FPS Counter**: Real-time render loop monitor with delta-time benchmarking.
+- **FPS Counter**: Real-time render loop monitor, coloured against the target (click to cycle the target).
 - **Device Selector Badge**: Shows the active audio stream (click to cycle devices).
 - **Style Selector Badge**: Shows the active visualizer mode (click to cycle styles).
 - **Mode Badge**: Shows current reactive mode (`Mic`, `Music`, `Synthwave`).
@@ -43,7 +43,7 @@ A sleek micro-panel docked in Discord's bottom left user bar:
 | --- | --- | --- |
 | **Visual Reaction Style** | `Edge Glow` | Visualizer presentation mode (`Edge Glow`, `Full Deck`, `Spectrum`, `Mirror`, `Waveform`, `Aurora`, `Stealth`). |
 | **Color Theme** | `Rainbow` | Active palette (`Rainbow`, `Cyberpunk`, `Synthwave`, `Matrix`, `Electric Blue`). |
-| **Target FPS** | `240` | Refresh rate target (`60`, `120`, `144`, `165`, `240`). |
+| **Target FPS** | `60` | Refresh rate target (`60`, `144`, `240`, uncapped). Every frame runs on Discord's UI thread, so higher targets make Discord itself slower. |
 | **Intensity** | `4` | Visualizer sensitivity multiplier (1 to 5). |
 | **Snappiness** | `4` | Beat attack/decay response speed (1 to 5). |
 | **Show Visualizer HUD** | `on` | Shows the bottom panel HUD controller. |
@@ -52,6 +52,6 @@ A sleek micro-panel docked in Discord's bottom left user bar:
 
 ## How It's Built
 
-- **Zero-GC Hot Path**: All audio analysis buffers (`Uint8Array`, `Float32Array`) and canvas coordinate arrays are pre-allocated at module load time. Zero object or array allocations occur inside the 240 FPS `requestAnimationFrame` loop.
-- **Compositor Acceleration**: Window perimeter glows use GPU compositor transforms and opacity transitions without triggering DOM layout recalcs or style invalidations.
+- **Zero-GC Hot Path**: All audio analysis buffers (`Uint8Array`, `Float32Array`) and canvas coordinate arrays are pre-allocated at module load time. Zero object or array allocations occur inside the `requestAnimationFrame` loop.
+- **Compositor Acceleration**: Opacity is the only style written every frame, and the glow layers are promoted with `will-change: opacity`, so the compositor applies it without a repaint. Colour changes (border, box-shadow, gradient) do repaint, so they are written at most 10 times a second and only when they change. Unchanged values are never rewritten.
 - **Decoupled Architecture**: Bi-directional event bus connects settings UI changes immediately to the render loop without requiring client reloads.

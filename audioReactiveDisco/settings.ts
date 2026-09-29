@@ -94,12 +94,21 @@ export const settings = definePluginSettings({
         description: "Target Refresh Rate / Framerate",
         type: OptionType.SELECT,
         options: [
-            { label: "🚀 240 FPS (Ultra Smooth / 240Hz Gaming)", value: 240, default: true },
+            { label: "🌿 60 FPS (Recommended)", value: 60, default: true },
             { label: "⚡ 144 FPS (High Refresh)", value: 144 },
-            { label: "🌿 60 FPS (Eco / Standard)", value: 60 },
+            { label: "🚀 240 FPS (Ultra Smooth / 240Hz Gaming)", value: 240 },
             { label: "♾️ Uncapped (Direct Display VSync)", value: 0 }
         ],
         onChange: val => notifySettingChange("targetFPS", val)
+    },
+    // 240 used to be the default, and Vencord persists defaults, so installs
+    // from before the change still have it stored. start() moves those to 60
+    // once and sets this so a deliberate 240 is left alone afterwards.
+    fpsDefaultMigrated: {
+        description: "Internal: targetFPS default migration done",
+        type: OptionType.BOOLEAN,
+        default: false,
+        hidden: true
     },
     snappiness: {
         description: "Animation Snappiness / Response Speed (higher = faster kick response)",

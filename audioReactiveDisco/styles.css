@@ -1,6 +1,11 @@
-/* AudioReactiveDisco Ultra-High-Performance 240 FPS Pure GPU Styles */
+/* AudioReactiveDisco styles
+ *
+ * The render loop writes only opacity per frame on the glow layers; that stays
+ * on the compositor. Border, shadow and gradient colours repaint when they
+ * change, so the loop writes those rarely. Keep it that way: animating any of
+ * them per frame repaints the whole window. */
 
-/* 1. Ambient Window Edge Glow (Edge Dancing Aura - Pure GPU Compositor 240 FPS) */
+/* 1. Ambient Window Edge Glow (Edge Dancing Aura) */
 .vc-ar-window-aura {
     position: fixed;
     inset: 0;
@@ -10,7 +15,7 @@
     box-shadow: inset 0 0 32px rgba(0, 240, 255, 0.4);
     opacity: 0;
     transform: translateZ(0);
-    will-change: opacity, border-color, box-shadow;
+    will-change: opacity;
     transition: none !important;
 }
 
@@ -28,11 +33,11 @@
     filter: blur(50px);
     opacity: 0;
     transform: translateZ(0);
-    will-change: opacity, background;
-    transition: opacity 0.06s ease-out;
+    will-change: opacity;
+    transition: none !important;
 }
 
-/* 3. Viewport 240 FPS Hardware Canvas Dock */
+/* 3. Viewport Canvas Dock */
 .vc-ar-viewport-canvas {
     position: fixed;
     bottom: 0;
