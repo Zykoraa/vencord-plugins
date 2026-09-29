@@ -1033,6 +1033,11 @@ export function SettingsPanel({ initialScope }: { initialScope?: EditScope; } = 
             <div className="ss-panel-heading">
                 <h2>Make your server list yours</h2>
                 <p>Choose a shape, tune its light, and see changes instantly.</p>
+                <div className="ss-authors" aria-label="Plugin authors">
+                    <span>By <a href="https://github.com/Zykoraa" target="_blank" rel="noreferrer">Eve</a></span>
+                    <span>and <a href="https://discord.com/users/725525081555730542" target="_blank" rel="noreferrer">Demonjane</a></span>
+                    <a href="https://github.com/Demonjane-jpg" target="_blank" rel="noreferrer">Demonjane’s GitHub</a>
+                </div>
             </div>
             <div className="ss-preview-dock">
             <PreviewStrip config={current} sample={sample} selected={previewSelected} />

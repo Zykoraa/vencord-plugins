@@ -324,6 +324,9 @@ export const PANEL_CSS = `
     min-width: 120px;
 }
 
+.ss-authors { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; font-size: 13px; color: var(--text-muted, #949ba4); }
+.ss-authors a { color: var(--text-link, #a5acff); text-decoration: underline; }
+.ss-authors > a { margin-left: 8px; }
 .ss-panel-heading h2 { margin: 0 0 5px; font-size: 22px; color: var(--header-primary, #fff); }
 .ss-panel-heading p { margin: 0 0 8px; font-size: 13px; color: var(--text-muted, #949ba4); }
 .ss-preview-dock { position: sticky; top: 0; z-index: 3; padding: 8px; border: 1px solid var(--background-modifier-accent, #ffffff18); border-radius: 12px; background: var(--background-primary, #313338); }
