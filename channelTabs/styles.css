@@ -1,0 +1,282 @@
+/*
+ * Vencord, a Discord client mod
+ * Copyright (c) 2026 Eve
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
+#vc-channel-tabs-container {
+    width: 100%;
+    position: relative;
+    z-index: 100;
+    flex-shrink: 0;
+}
+
+.vc-channel-tabs-bar {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    background: var(--background-tertiary, #1e1f22);
+    border-bottom: 1px solid var(--background-modifier-accent, rgba(255, 255, 255, 0.08));
+    padding: 0 8px;
+    box-sizing: border-box;
+    user-select: none;
+    position: relative;
+    gap: 4px;
+}
+
+.vc-channel-tabs-bar.vc-tabs-compact {
+    height: 30px;
+    padding: 0 4px;
+}
+
+/* Scrollable container for tabs */
+.vc-tabs-scroll-container {
+    display: flex;
+    align-items: center;
+    flex: 1;
+    overflow-x: auto;
+    overflow-y: hidden;
+    height: 100%;
+    scrollbar-width: none;
+    gap: 4px;
+}
+
+.vc-tabs-scroll-container::-webkit-scrollbar {
+    display: none;
+}
+
+.vc-tabs-group-pinned,
+.vc-tabs-group-unpinned {
+    display: flex;
+    align-items: center;
+    height: 100%;
+    gap: 3px;
+}
+
+/* Pinned tabs separator */
+.vc-tabs-pinned-divider {
+    width: 1px;
+    height: 18px;
+    background: var(--background-modifier-accent, rgba(255, 255, 255, 0.12));
+    margin: 0 4px;
+}
+
+/* Tab item */
+.vc-tab {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    padding: 0 10px;
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text-muted, #949ba4);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    position: relative;
+    max-width: 180px;
+    min-width: 50px;
+    transition: background 0.12s ease, color 0.12s ease;
+    gap: 6px;
+    box-sizing: border-box;
+    flex-shrink: 0;
+}
+
+.vc-tab-compact .vc-tab {
+    height: 24px;
+    padding: 0 6px;
+    font-size: 12px;
+    max-width: 150px;
+}
+
+.vc-tab:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.06));
+    color: var(--text-normal, #dbdee1);
+}
+
+.vc-tab.vc-tab-active {
+    background: var(--background-primary, #313338);
+    color: var(--header-primary, #ffffff);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Active bottom accent line */
+.vc-tab-accent-line {
+    position: absolute;
+    bottom: -4px;
+    left: 8px;
+    right: 8px;
+    height: 2px;
+    background: var(--brand-experiment, #5865f2);
+    border-radius: 2px;
+    box-shadow: 0 0 6px var(--brand-experiment, #5865f2);
+}
+
+/* Pinned tab styling */
+.vc-tab.vc-tab-pinned {
+    max-width: 32px;
+    min-width: 32px;
+    padding: 0;
+    justify-content: center;
+}
+
+.vc-tab-compact .vc-tab.vc-tab-pinned {
+    max-width: 26px;
+    min-width: 26px;
+}
+
+/* Drag & Drop Target styling */
+.vc-tab.vc-tab-drop-target {
+    border-left: 2px solid var(--brand-experiment, #5865f2);
+    background: var(--background-modifier-selected, rgba(255, 255, 255, 0.1));
+}
+
+/* Tab Icon */
+.vc-tab-icon-wrapper {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+}
+
+.vc-tab-icon {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    object-fit: cover;
+}
+
+.vc-tab-icon-fallback {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--text-muted, #949ba4);
+}
+
+.vc-tab.vc-tab-active .vc-tab-icon-fallback {
+    color: var(--header-primary, #ffffff);
+}
+
+/* Tab Title */
+.vc-tab-title {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+}
+
+/* Badges */
+.vc-tab-badges {
+    display: flex;
+    align-items: center;
+    margin-left: 2px;
+    flex-shrink: 0;
+}
+
+.vc-tab-badge-mention {
+    background: var(--status-danger, #f23f43);
+    color: #ffffff;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 14px;
+    padding: 0 4px;
+    min-width: 14px;
+    height: 14px;
+    border-radius: 7px;
+    text-align: center;
+    box-sizing: border-box;
+}
+
+.vc-tab-badge-unread {
+    width: 6px;
+    height: 6px;
+    background: var(--interactive-active, #ffffff);
+    border-radius: 50%;
+    box-shadow: 0 0 4px rgba(255, 255, 255, 0.4);
+}
+
+/* Close button */
+.vc-tab-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 16px;
+    height: 16px;
+    padding: 0;
+    margin-left: 2px;
+    border: none;
+    border-radius: 3px;
+    background: transparent;
+    color: var(--interactive-normal, #b5bac1);
+    opacity: 0;
+    cursor: pointer;
+    transition: opacity 0.1s ease, background 0.1s ease, color 0.1s ease;
+    flex-shrink: 0;
+}
+
+.vc-tab:hover .vc-tab-close {
+    opacity: 0.7;
+}
+
+.vc-tab-close:hover {
+    opacity: 1 !important;
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.15));
+    color: var(--interactive-hover, #ffffff);
+}
+
+.vc-tab.vc-tab-active .vc-tab-close {
+    opacity: 0.6;
+}
+
+/* New Tab Button */
+.vc-tab-new-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    padding: 0;
+    margin-left: 4px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+    flex-shrink: 0;
+}
+
+.vc-tab-new-btn:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+    color: var(--interactive-hover, #ffffff);
+}
+
+/* Right Actions Tray */
+.vc-tabs-actions-tray {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: 6px;
+    flex-shrink: 0;
+}
+
+.vc-tabs-action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--interactive-normal, #b5bac1);
+    cursor: pointer;
+    transition: background 0.12s ease, color 0.12s ease;
+}
+
+.vc-tabs-action-btn:hover {
+    background: var(--background-modifier-hover, rgba(255, 255, 255, 0.08));
+    color: var(--interactive-hover, #ffffff);
+}

@@ -1,10 +1,11 @@
 # Vencord plugins
 
-Five userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
+Six userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
 locally — nothing is sent anywhere, and nothing here needs an API key or an external tracking server.
 
 | Plugin | What it does |
 | --- | --- |
+| [ChannelTabs](#channeltabs) | Sleek browser-style tab bar for channels & DMs with background middle-click, pinned tabs, and Ctrl+Tab |
 | [ServerShapes](#servershapes) | 16 server icon shapes with contour-following glows, gradients, per-server styles, and audio reactivity |
 | [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers with native PipeWire & BetterBanana Spotify routing |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
@@ -31,6 +32,19 @@ If you'd rather keep this repo as the single source of truth, use `./install.sh 
 symlinks instead of copying and writes a local, gitignored `tsconfig.json` pointing at your
 checkout — esbuild resolves symlinks to their real path *before* it looks for tsconfig path
 aliases, so without that file a linked install can't resolve `@utils/*`, `@webpack/*` and friends.
+
+## ChannelTabs
+
+Keep multiple channels and DMs open at once in a familiar browser tab strip.
+
+- **Middle-Click to Open in Background**: Middle-click or `Ctrl+Click` any channel or DM in the sidebar to open it in a new tab without interrupting what you're reading
+- **Pinned Tabs**: Pin high-frequency channels to compact icon-only tabs anchored on the left
+- **Live Unread Badges**: Real-time white dots for unread messages and red badges for direct mentions
+- **Drag-and-Drop Reordering**: Drag tabs smoothly to organize your workspace
+- **Keyboard Shortcuts**: `Ctrl+Tab` to cycle forward, `Ctrl+Shift+Tab` to cycle backward, `Ctrl+W` to close active tab, `Ctrl+1..9` to jump, `Ctrl+Shift+T` to reopen closed tabs
+- **Native Context Menu**: Right-click tabs to pin, close, close others, close to right, copy channel link, or mark as read
+
+[More detail →](channelTabs/README.md)
 
 ## ServerShapes
 
