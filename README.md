@@ -1,6 +1,6 @@
 # Vencord plugins
 
-Six userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
+Seven userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
 locally — nothing is sent anywhere, and nothing here needs an API key or an external tracking server.
 
 | Plugin | What it does |
@@ -10,6 +10,7 @@ locally — nothing is sent anywhere, and nothing here needs an API key or an ex
 | [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers with native PipeWire & BetterBanana Spotify routing |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
+| [CameraQualityLock](#cameraqualitylock) | Stops viewers from dropping your camera to 320x180 when they fullscreen your Go Live |
 | [ReplyGraph](#replygraph) | Draws a channel's reply structure as a force-directed graph so you can untangle four conversations at once |
 
 ## Install
@@ -103,6 +104,18 @@ It shows up when you join a call and disappears when you leave. No webpack patch
 stores, so a Discord update can't break it in the way a bad patch regex can.
 
 [More detail →](voiceQualityHUD/README.md)
+
+## CameraQualityLock
+
+Your camera drops to 320x180 whenever someone fullscreens your Go Live. That's not bandwidth: their
+client asks Discord's server for a thumbnail-sized feed, and your client obeys. Discord's own logs
+show `bw limited: 0` the whole time.
+
+This plugin raises those requests to a minimum you choose, 100 by default. It only applies to your
+outgoing camera. The cost is that the camera keeps using ~2.5 Mbps of upload while the viewer
+shows it small.
+
+[More detail →](cameraQualityLock/README.md)
 
 ## ReplyGraph
 
