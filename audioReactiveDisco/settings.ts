@@ -12,6 +12,12 @@ export const enum ReactiveMode {
     Media = "media"
 }
 
+export const enum SpectrumSource {
+    Auto = "auto",
+    Eveamp = "eveamp",
+    Capture = "capture"
+}
+
 export const enum ColorTheme {
     Rainbow = "rainbow",
     Cyberpunk = "cyberpunk",
@@ -71,6 +77,16 @@ export const settings = definePluginSettings({
             { label: "Procedural Synthwave Beat (No Mic Needed / Demo)", value: ReactiveMode.SynthwaveBeat }
         ],
         onChange: val => notifySettingChange("mode", val)
+    },
+    spectrumSource: {
+        description: "Where live audio comes from: eveamp's spectrum (no capture, lowest cost), the capture device below, or Auto (eveamp while it plays, otherwise the capture device)",
+        type: OptionType.SELECT,
+        options: [
+            { label: "Auto (eveamp while it plays, else capture)", value: SpectrumSource.Auto, default: true },
+            { label: "eveamp only", value: SpectrumSource.Eveamp },
+            { label: "Capture device only", value: SpectrumSource.Capture }
+        ],
+        onChange: val => notifySettingChange("spectrumSource", val)
     },
     audioDevice: {
         description: "Target Audio Device ('betterbanana_auto' automatically binds Spotify/Cable 1)",

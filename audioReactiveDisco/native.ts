@@ -7,6 +7,8 @@ import { exec } from "child_process";
 import { appendFileSync } from "fs";
 import { promisify } from "util";
 
+import { EveampClient } from "./eveampClient";
+
 const execAsync = promisify(exec);
 
 export function logDebug(_: any, msg: string) {
@@ -55,4 +57,21 @@ export async function ensureBetterBananaSources(_: any) {
         console.error("[AudioReactiveDisco Native] Failed to ensure BetterBanana sources:", err);
         return [];
     }
+}
+
+const eveamp = new EveampClient();
+
+/**
+ * eveamp's current spectrum: 10 octave bands, or null when eveamp is not
+ * running. One spectrum.get round trip over eveamp's socket; the renderer
+ * calls it at the rate it wants frames.
+ */
+export async function eveampBands(_: any): Promise<number[] | null> {
+    const res = await eveamp.call("spectrum.get", 250);
+    const bands = res?.ok ? res.result?.bands : null;
+    return Array.isArray(bands) ? bands : null;
+}
+
+export function eveampDisconnect(_: any) {
+    eveamp.close();
 }

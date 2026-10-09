@@ -6,10 +6,12 @@
 import { SettingsStore } from "@api/Settings";
 import { PluginNative } from "@utils/types";
 import definePlugin from "@utils/types";
+import { barsFromBands, EVEAMP_BANDS, isAudible, levelsFromBands, normalizeBands } from "./eveamp";
 import {
     settings,
     ReactiveMode,
     ColorTheme,
+    SpectrumSource,
     VisualReactionStyle,
     onSettingChange
 } from "./settings";
@@ -64,6 +66,24 @@ let measuredFPS = 0;
 let lastHudMountAttempt = 0;
 let lastColorWrite = 0;
 
+// eveamp spectrum source. Frames are fetched on their own timer at eveamp's
+// rate (30/s), not per rendered frame, so a 144 or 240 FPS cap costs no extra
+// IPC; the render loop reads whatever arrived last.
+const EVEAMP_POLL_MS = 33;
+const EVEAMP_IDLE_POLL_MS = 1000;
+// A frame older than this means eveamp stopped answering.
+const EVEAMP_STALE_MS = 500;
+// Auto falls back to the capture device after this much eveamp silence.
+const EVEAMP_SILENT_MS = 1500;
+const eveampRaw = new Float32Array(EVEAMP_BANDS);
+const eveampNorm = new Float32Array(EVEAMP_BANDS);
+const eveampPeaks = new Float32Array(EVEAMP_BANDS);
+let eveampPollTimer: ReturnType<typeof setTimeout> | null = null;
+let eveampRunning = false;
+let eveampFrameAt = -Infinity; // performance.now() of the last frame
+let eveampAudibleAt = -Infinity; // ... of the last frame with sound
+let eveampInUse = false; // last frame's choice, so the badge changes only on a switch
+
 // Last value written per element and property, so frames where nothing changed
 // leave the DOM alone. Keyed weakly: a remounted element starts with no entries.
 const writtenStyles = new WeakMap<HTMLElement, Map<string, string>>();
@@ -83,7 +103,9 @@ function fpsLabel(fps: number) {
 // Pre-allocated typed arrays (ZERO garbage collection in hot path)
 // fftSize 256 gives 128 frequency bins (0 to 127) for high-precision audio analysis
 const rawFreqBuffer = new Uint8Array(128);
-const rawWaveBuffer = new Uint8Array(128);
+// 128 is silence in byte time-domain data; until an analyser fills it the
+// waveforms draw a flat line instead of a full-scale offset.
+const rawWaveBuffer = new Uint8Array(128).fill(128);
 const barDataBuffer = new Uint8Array(16);
 const peakHeights = new Float32Array(16);
 const viewportPeakHeights = new Float32Array(32);
@@ -326,6 +348,11 @@ async function setupAudioSource(mode: ReactiveMode) {
         teardownAudioSource();
         return;
     }
+    if (settings.store.spectrumSource === SpectrumSource.Eveamp) {
+        // eveamp only: no capture stream at all, which also frees the device.
+        teardownAudioSource();
+        return;
+    }
 
     const devList = await discoverAudioDevices();
     const chosenSetting = settings.store.audioDevice;
@@ -483,6 +510,54 @@ function computeProceduralBeat(t: number): { bass: number; mid: number; treble: 
     return { bass, mid, treble, level };
 }
 
+function eveampWanted() {
+    return settings.store.mode !== ReactiveMode.SynthwaveBeat
+        && (settings.store.spectrumSource ?? SpectrumSource.Auto) !== SpectrumSource.Capture;
+}
+
+async function pollEveamp() {
+    eveampPollTimer = null;
+    if (!eveampRunning) return;
+    // Hidden windows draw nothing, so there is no point fetching frames fast.
+    let delay = document.hidden ? EVEAMP_IDLE_POLL_MS : EVEAMP_POLL_MS;
+    if (eveampWanted() && !document.hidden) {
+        const bands = await Native?.eveampBands?.().catch(() => null);
+        if (!eveampRunning) return;
+        if (bands) {
+            const now = performance.now();
+            for (let b = 0; b < EVEAMP_BANDS; b++) eveampRaw[b] = Number(bands[b]) || 0;
+            eveampFrameAt = now;
+            if (isAudible(eveampRaw)) eveampAudibleAt = now;
+        } else {
+            // Not running: check again in a second rather than 30 times.
+            delay = EVEAMP_IDLE_POLL_MS;
+        }
+    }
+    eveampPollTimer = setTimeout(pollEveamp, delay);
+}
+
+function startEveamp() {
+    if (eveampRunning) return;
+    eveampRunning = true;
+    void pollEveamp();
+}
+
+function stopEveamp() {
+    eveampRunning = false;
+    if (eveampPollTimer) {
+        clearTimeout(eveampPollTimer);
+        eveampPollTimer = null;
+    }
+    void Native?.eveampDisconnect?.();
+}
+
+/** Whether this frame draws from eveamp rather than the capture device. */
+function useEveamp(now: number): boolean {
+    if (!eveampWanted()) return false;
+    if (settings.store.spectrumSource === SpectrumSource.Eveamp) return now - eveampFrameAt < EVEAMP_STALE_MS;
+    return now - eveampFrameAt < EVEAMP_STALE_MS && now - eveampAudibleAt < EVEAMP_SILENT_MS;
+}
+
 // Every requestAnimationFrame wakes Discord's UI thread and compositor, even
 // one that returns straight away, so waiting out a capped frame interval with
 // rAF alone costs a wakeup per display refresh (240/s on a 240 Hz monitor).
@@ -548,12 +623,29 @@ function renderFrame(now: DOMHighResTimeStamp) {
     let treble = 0;
     let level = 0;
 
+    if (eveampInUse && !useEveamp(now)) {
+        eveampInUse = false;
+        updateDeviceBadgeLabel();
+    }
+
     if (currentMode === ReactiveMode.SynthwaveBeat) {
         const synth = computeProceduralBeat(nowSec);
         bass = synth.bass;
         mid = synth.mid;
         treble = synth.treble;
         level = synth.level;
+    } else if (useEveamp(now)) {
+        if (!eveampInUse) {
+            eveampInUse = true;
+            if (hudDeviceBadge) hudDeviceBadge.textContent = "🎵 eveamp";
+        }
+        normalizeBands(eveampRaw, eveampPeaks, dt, eveampNorm);
+        const levels = levelsFromBands(eveampNorm);
+        bass = levels.bass;
+        mid = levels.mid;
+        treble = levels.treble;
+        level = levels.level;
+        barsFromBands(eveampNorm, barDataBuffer);
     } else if (analyserNode) {
         analyserNode.getByteFrequencyData(rawFreqBuffer);
 
@@ -1409,7 +1501,7 @@ function handleSettingChange(key: string, val: any) {
             hudModeBadge.textContent = val === ReactiveMode.SynthwaveBeat ? "BEAT" : "LIVE";
         }
         void setupAudioSource(val);
-    } else if (key === "audioDevice") {
+    } else if (key === "audioDevice" || key === "spectrumSource") {
         void setupAudioSource(settings.store.mode);
     } else if (key === "showVisualizerHUD") {
         if (val) mountHUD();
@@ -1458,6 +1550,7 @@ export default definePlugin({
         window.addEventListener("pointerdown", onPointerDown, { passive: true });
         navigator.mediaDevices?.addEventListener("devicechange", onDeviceChange);
 
+        startEveamp();
         animationFrameId = requestAnimationFrame(renderFrame);
     },
 
@@ -1480,6 +1573,7 @@ export default definePlugin({
         navigator.mediaDevices?.removeEventListener("devicechange", onDeviceChange);
 
         teardownAudioSource();
+        stopEveamp();
 
         if (audioContext && audioContext.state !== "closed") {
             void audioContext.close();

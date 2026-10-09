@@ -12,7 +12,7 @@
 
 set -euo pipefail
 
-PLUGINS=(callWrapped voiceQualityHUD replyGraph audioReactiveDisco serverShapes channelTabs cameraQualityLock)
+PLUGINS=(callWrapped voiceQualityHUD replyGraph audioReactiveDisco serverShapes channelTabs cameraQualityLock eveampPresence)
 REPO="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 MODE="copy"
 VENCORD=""

@@ -18,6 +18,25 @@ Switch styles directly from Discord Settings or click the **style badge** in the
 | **🌊 Ambient Aurora** | Soft diffused atmospheric underglow bloom (like OLED ambilight backlighting) breathing with track rhythm. |
 | **🎛️ Minimal Stealth** | Zero viewport overlays; keeps only the audio micro-meter inside the bottom panel HUD. |
 
+## eveamp Source
+
+With eveamp (a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) running, the visualizers can read its spectrum
+directly instead of capturing audio:
+
+- The plugin's native helper asks eveamp for its spectrum (`spectrum.get`) over eveamp's socket,
+  `~/.config/eveamp/eveamp.sock`, 30 times a second. A round trip takes under 2 ms.
+- eveamp's 10 octave bands (20 Hz to 20 kHz) become bass (20-160 Hz), mid (160 Hz-2.5 kHz),
+  treble (2.5-20 kHz) and the 16 spectrum bars. A per-band automatic gain keeps quiet mixes and a
+  turned-down eveamp lively, and leaves silence silent.
+- Frames are fetched on their own timer, not per rendered frame, so a higher FPS target costs no
+  extra requests. A hidden window fetches once a second.
+- **Spectrum Source** setting: **Auto** (default) uses eveamp while it plays and the capture device
+  otherwise; **eveamp only** opens no capture stream at all; **Capture device only** ignores
+  eveamp. The device badge reads `🎵 eveamp` while eveamp drives the visuals.
+
+The waveform styles draw from the capture device's time-domain data when one is open; with eveamp
+only they follow the bass and mid levels.
+
 ## Audio Routing & BetterBanana (Linux / PipeWire)
 
 Built specifically for high-fidelity audio workflows:
@@ -48,6 +67,7 @@ A sleek micro-panel docked in Discord's bottom left user bar:
 | **Snappiness** | `4` | Beat attack/decay response speed (1 to 5). |
 | **Show Visualizer HUD** | `on` | Shows the bottom panel HUD controller. |
 | **Window Edge Glow** | `on` | Enables the ambient edge aura in supporting modes. |
+| **Spectrum Source** | `Auto` | `Auto` (eveamp while it plays, else capture), `eveamp only`, or `Capture device only`. |
 | **Audio Input Device** | `Auto` | Select specific input device or auto-detect BetterBanana Spotify. |
 
 ## How It's Built

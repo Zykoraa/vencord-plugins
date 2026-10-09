@@ -1,13 +1,15 @@
 # Vencord plugins
 
-Seven userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
-locally — nothing is sent anywhere, and nothing here needs an API key or an external tracking server.
+Eight userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
+locally — nothing is sent anywhere (EveampPresence's one exception: it sets your Discord activity, which
+is its job), and nothing here needs an API key or an external tracking server.
 
 | Plugin | What it does |
 | --- | --- |
 | [ChannelTabs](#channeltabs) | Sleek browser-style tab bar for channels & DMs with background middle-click, pinned tabs, and Ctrl+Tab |
 | [ServerShapes](#servershapes) | 16 server icon shapes with contour-following glows, gradients, per-server styles, and audio reactivity |
-| [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers with native PipeWire & BetterBanana Spotify routing |
+| [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers driven by eveamp, or by native PipeWire & BetterBanana capture |
+| [EveampPresence](#eveamppresence) | Shows what eveamp (a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as "Listening to" for every source: Spotify, YouTube Music, radio, local files |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
 | [CameraQualityLock](#cameraqualitylock) | Stops viewers from dropping your camera to 320x180 when they fullscreen your Go Live |
@@ -141,6 +143,8 @@ Turns your Discord window into a clean, hardware-accelerated audio reactive canv
 - **Seven Visualizer Styles**: Ambient Edge Glow around your window perimeter, Full Cyber Deck,
   Neon Spectrum Bars, Mirror Spectrum, Cyber Waveform (fluid traveling oscilloscope ribbon),
   Ambient Aurora bloom, and Minimal Stealth.
+- **eveamp spectrum source**: Reads the spectrum straight from eveamp over its local socket, so
+  it needs no capture stream at all. Auto mode uses eveamp while it plays and falls back to capture.
 - **Native Spotify & BetterBanana Binding**: Automatically detects and binds to PipeWire virtual
   sinks (`bb_spotify_source` / `bb_cable1.monitor`) on Linux so it reacts directly to your music stream.
 - **Zero-GC Hot Path**: Pure pre-allocated typed arrays in the 240 FPS render loop for zero frame stutter.
@@ -149,12 +153,29 @@ Turns your Discord window into a clean, hardware-accelerated audio reactive canv
 
 [More detail →](audioReactiveDisco/README.md)
 
+## EveampPresence
+
+Shows the song eveamp plays as a **Listening to** activity, with title, artist, album art and a
+progress bar, for every source eveamp plays: Spotify, YouTube Music, SoundCloud, radio (station and
+the current song), Navidrome, Jellyfin, local files and the rest. It clears when eveamp pauses,
+stops or quits.
+
+- Reads eveamp's state from its local socket every 2 seconds, and updates Discord only when the
+  song changes or you seek.
+- **Skip Spotify while Discord shows it** (on by default): Discord's own Spotify connection already
+  shows Spotify tracks, so this avoids two music statuses.
+- Name the activity after eveamp, the service, or the song.
+
+[More detail →](eveampPresence/README.md)
+
 ## A note on what these can see
 
-These plugins only use data Discord has already handed the client or local audio inputs you explicitly select:
-who is speaking in a call you're in, your own connection stats, the messages already loaded in a channel,
-or local audio streams via Web Audio API. Nothing leaves your machine — CallWrapped's saved reports, the
-HUD positions, and AudioReactiveDisco's settings live in Vencord's local storage.
+These plugins only use data Discord has already handed the client, local audio inputs you explicitly select,
+or a local eveamp: who is speaking in a call you're in, your own connection stats, the messages already loaded in a channel,
+local audio streams via Web Audio API, or what a local eveamp reports over its socket. Nothing leaves
+your machine — CallWrapped's saved reports, the HUD positions, and AudioReactiveDisco's settings live in
+Vencord's local storage — except EveampPresence's activity, which Discord shows to others like any
+"Listening to" status.
 
 CallWrapped does record when each person in a call spoke. That's derived from the same events that
 make the green ring appear around someone's avatar, so it's nothing the call didn't already show
