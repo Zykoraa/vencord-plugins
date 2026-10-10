@@ -26,7 +26,7 @@ const settings = definePluginSettings({
         description: "What \"Listening to …\" names",
         type: OptionType.SELECT,
         options: [
-            { label: "eveamp", value: NameFormat.Eveamp, default: true },
+            { label: "Motif", value: NameFormat.Eveamp, default: true },
             { label: "The service (Spotify, YouTube Music, Radio, …)", value: NameFormat.Provider },
             { label: "The song", value: NameFormat.Song }
         ]
@@ -46,6 +46,7 @@ const settings = definePluginSettings({
 let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
 let shown: Presence | null = null;
+let shownAlbumArt = true;
 // Bumped on stop, so an activity built across an await never lands after it.
 let generation = 0;
 const assetCache = new Map<string, string>();
@@ -76,9 +77,9 @@ async function albumArt(url: string): Promise<string | undefined> {
     }
 }
 
-async function toActivity(p: Presence): Promise<Activity> {
+async function toActivity(p: Presence, showAlbumArt: boolean): Promise<Activity> {
     const assets: ActivityAssets = { large_text: p.largeText };
-    if (p.imageUrl && settings.store.showAlbumArt) {
+    if (p.imageUrl && showAlbumArt) {
         const image = await albumArt(p.imageUrl);
         if (image) assets.large_image = image;
     }
@@ -103,11 +104,13 @@ async function tick() {
         if (gen !== generation) return;
         let next = buildPresence(snap, Date.now(), settings.store.nameFormat);
         if (next?.isSpotify && settings.store.hideWithSpotify && spotifyShown()) next = null;
-        if (needsUpdate(shown, next)) {
-            const activity = next ? await toActivity(next) : null;
+        if (needsUpdate(shown, next) || (next && shownAlbumArt !== settings.store.showAlbumArt)) {
+            const { showAlbumArt } = settings.store;
+            const activity = next ? await toActivity(next, showAlbumArt) : null;
             if (gen !== generation) return;
-            shown = next;
             setActivity(activity);
+            shown = next;
+            shownAlbumArt = showAlbumArt;
         }
     } finally {
         if (running && gen === generation) timer = setTimeout(tick, POLL_MS);
@@ -116,7 +119,7 @@ async function tick() {
 
 export default definePlugin({
     name: "EveampPresence",
-    description: "Shows what eveamp plays as \"Listening to\" on your profile, for every source: Spotify, YouTube Music, radio, local files and the rest",
+    description: "Shows what Motif plays as \"Listening to\" on your profile, for every source: Spotify, YouTube Music, radio, local files and the rest",
     authors: [{ name: "Eve", id: 0n }],
     tags: ["Activity", "Media"],
     settings,

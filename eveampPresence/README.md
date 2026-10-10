@@ -1,9 +1,9 @@
 # EveampPresence
 
-Shows what eveamp (a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as a **Listening to** activity on your
-Discord profile, for every source eveamp plays.
+Shows what Motif (formerly eveamp; a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as a **Listening to** activity on your
+Discord profile, for every source Motif plays.
 
-| eveamp plays | Activity shows |
+| Motif plays | Activity shows |
 | --- | --- |
 | A track (Spotify, YouTube Music, Navidrome, local file, ...) | Title, artist, album art, album, and a progress bar |
 | Radio | The current song (when the station sends one), the station, and time listened |
@@ -14,8 +14,7 @@ Discord profile, for every source eveamp plays.
 - The plugin's native helper asks eveamp for its state (`state.get`) over eveamp's socket,
   `~/.config/eveamp/eveamp.sock` (or `$EVEAMP_CONFIG_DIR`, or `$XDG_CONFIG_HOME/eveamp`), every
   2 seconds. Nothing leaves your machine except the activity Discord shows.
-- The activity changes only when the song changes, you seek, or a pause ends, so Discord's presence
-  rate limit is never an issue.
+- The activity changes on song changes, seeks, pause/resume, updated album metadata, or an album-art setting change. Normal polling does not republish it.
 - The service comes from eveamp's track data: Spotify, YouTube Music, YouTube, SoundCloud, Mixcloud,
   Bandcamp, TIDAL, Qobuz, Navidrome, Jellyfin, Emby, Lyrion, NetEase, Yandex, Audiobookshelf,
   podcasts, cliamp radio, other radio, and local files.
@@ -25,6 +24,8 @@ Discord profile, for every source eveamp plays.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| **Name** | `eveamp` | What "Listening to ..." names: `eveamp`, the service, or the song. Title and artist appear in the profile card. |
-| **Skip Spotify while Discord shows it** | `off` | By default eveamp shows its own card and temporarily hides the duplicate Spotify card. Turn this on to prefer Discord's native Spotify card. Pausing or closing eveamp restores the native card. |
+| **Name** | `Motif` | What "Listening to ..." names: `Motif`, the service, or the song. Title and artist appear in the profile card. |
+| **Skip Spotify while Discord shows it** | `off` | By default Motif shows its own card and temporarily hides the duplicate Spotify card. Turn this on to prefer Discord's native Spotify card. Pausing or closing Motif restores the native card. |
 | **Show album art** | `on` | Show the track's cover. |
+
+The plugin keeps the internal name **EveampPresence** and the existing socket path so saved settings and integrations keep working after the Motif rename.

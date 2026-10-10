@@ -142,7 +142,7 @@ export function buildPresence(snap: EveampSnapshot | null, nowMs: number, nameFo
 
     const name = nameFormat === NameFormat.Provider ? provider
         : nameFormat === NameFormat.Song ? details
-            : "eveamp";
+            : "Motif";
 
     return {
         key: `${t.path}\n${details}\n${state}\n${name}`,
@@ -165,5 +165,8 @@ const START_TOLERANCE_MS = 3000;
 /** Whether the shown presence must change from prev to next. */
 export function needsUpdate(prev: Presence | null, next: Presence | null): boolean {
     if (!prev || !next) return prev !== next;
-    return prev.key !== next.key || Math.abs(prev.start - next.start) > START_TOLERANCE_MS;
+    const duration = (p: Presence) => p.end === undefined ? undefined : p.end - p.start;
+    return prev.key !== next.key || Math.abs(prev.start - next.start) > START_TOLERANCE_MS
+        || prev.imageUrl !== next.imageUrl || prev.largeText !== next.largeText
+        || duration(prev) !== duration(next);
 }

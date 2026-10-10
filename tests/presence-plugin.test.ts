@@ -24,7 +24,7 @@ async function harness() {
         "@utils/types": "export default x=>x; export const OptionType={SELECT:1,BOOLEAN:2};",
         "@vencord/discord-types/enums": `export const ActivityFlags={INSTANCE:1},
             ActivityStatusDisplayType={NAME:0},ActivityType={LISTENING:2};`,
-        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async()=>[]},
+        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async()=>["cover"]},
             AuthenticationStore={getId:()=>"self"},
             PresenceStore={getActivities:()=>[{type:2,name:"Spotify"}]},
             FluxDispatcher={dispatch:e=>events.push(e)};`
@@ -49,6 +49,7 @@ async function harness() {
     const plugin = context.module.exports.default;
     const settle = async () => { for (let i = 0; i < 10; i++) await Promise.resolve(); };
     return { plugin, events, settle, context,
+        update: (patch: any) => { snapshot = { ...snapshot, ...patch }; },
         pause: () => { snapshot = { ...snapshot, state: "paused" }; },
         poll: async () => { await nextTick?.(); await settle(); }
     };
@@ -60,7 +61,7 @@ it("publishes the player's listening card even when native Spotify is present, t
     await h.settle();
     const activity = h.events.at(-1)?.activity;
     assert.ok(activity, "the default must not step aside for Spotify");
-    assert.equal(activity.name, "eveamp");
+    assert.equal(activity.name, "Motif");
     assert.equal(activity.type, 2);
     assert.equal(activity.status_display_type, 0, "show the player's name in the member list");
     assert.equal(activity.details, "A song");
@@ -78,6 +79,21 @@ it("publishes the player's listening card even when native Spotify is present, t
     await h.poll();
     assert.equal(h.events.at(-1)?.activity, null);
     assert.equal(spotify.shouldShowActivity(), true, "restore native behavior after pause");
+    h.plugin.stop();
+});
+
+it("refreshes album art settings while the same song keeps playing", async () => {
+    const h = await harness();
+    h.update({ track: { path: "spotify:track:test", title: "A song", artist: "An artist", album_art_url: "https://example.org/cover.png" } });
+    h.plugin.start();
+    await h.settle();
+    assert.equal(h.events.at(-1)?.activity.assets.large_image, "cover");
+    h.plugin.settings.store.showAlbumArt = false;
+    await h.poll();
+    assert.equal(h.events.at(-1)?.activity.assets.large_image, undefined);
+    h.plugin.settings.store.showAlbumArt = true;
+    await h.poll();
+    assert.equal(h.events.at(-1)?.activity.assets.large_image, "cover");
     h.plugin.stop();
 });
 

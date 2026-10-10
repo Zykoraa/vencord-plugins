@@ -9,7 +9,7 @@ is its job), and nothing here needs an API key or an external tracking server.
 | [ChannelTabs](#channeltabs) | Sleek browser-style tab bar for channels & DMs with background middle-click, pinned tabs, and Ctrl+Tab |
 | [ServerShapes](#servershapes) | 16 server icon shapes with contour-following glows, gradients, per-server styles, and audio reactivity |
 | [AudioReactiveDisco](#audioreactivedisco) | Hardware-accelerated 240 FPS audio reactive visualizers driven by eveamp, or by native PipeWire & BetterBanana capture |
-| [EveampPresence](#eveamppresence) | Shows what eveamp (a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as "Listening to" for every source: Spotify, YouTube Music, radio, local files |
+| [EveampPresence](#eveamppresence) | Shows what Motif (formerly eveamp; a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as "Listening to" for every source: Spotify, YouTube Music, radio, local files |
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
 | [CameraQualityLock](#cameraqualitylock) | Stops viewers from dropping your camera to 320x180 when they fullscreen your Go Live |

@@ -103,7 +103,7 @@ describe("presence model", () => {
 
     it("builds a timed activity for a track", () => {
         const p = buildPresence(spotify, now)!;
-        assert.equal(p.name, "eveamp");
+        assert.equal(p.name, "Motif");
         assert.equal(p.details, "Howl");
         assert.equal(p.state, "Mei Semones");
         assert.equal(p.largeText, "Howl");
@@ -150,6 +150,16 @@ describe("presence model", () => {
         assert.equal(needsUpdate(a, buildPresence({ ...spotify, track: { ...spotify.track, title: "Other" } }, now)), true, "new track");
         assert.equal(needsUpdate(a, null), true, "paused");
         assert.equal(needsUpdate(null, null), false);
+    });
+
+    it("refreshes late album metadata and a newly discovered duration", () => {
+        const a = buildPresence(spotify, now);
+        for (const patch of [{ album: "Corrected album" }, { album_art_url: "https://example.org/new-cover.png" }]) {
+            assert.equal(needsUpdate(a, buildPresence({ ...spotify, track: { ...spotify.track, ...patch } }, now)), true);
+        }
+        const unknown = buildPresence({ ...spotify, duration: 0, track: { ...spotify.track, duration_secs: 0 } }, now);
+        assert.equal(needsUpdate(unknown, a), true);
+        assert.equal(needsUpdate(a, buildPresence({ ...spotify, duration: 210 }, now)), true);
     });
 });
 
