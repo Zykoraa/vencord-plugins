@@ -25,6 +25,6 @@ Discord profile, for every source eveamp plays.
 
 | Setting | Default | Description |
 | --- | --- | --- |
-| **Name** | `eveamp` | What "Listening to ..." names: `eveamp`, the service, or the song. The member list shows the song either way. |
-| **Skip Spotify while Discord shows it** | `on` | Discord's Spotify connection already shows Spotify tracks; this hides the eveamp activity for them while that status is up. |
+| **Name** | `eveamp` | What "Listening to ..." names: `eveamp`, the service, or the song. Title and artist appear in the profile card. |
+| **Skip Spotify while Discord shows it** | `off` | By default eveamp shows its own card and temporarily hides the duplicate Spotify card. Turn this on to prefer Discord's native Spotify card. Pausing or closing eveamp restores the native card. |
 | **Show album art** | `on` | Show the track's cover. |

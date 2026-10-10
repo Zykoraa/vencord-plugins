@@ -34,7 +34,7 @@ const settings = definePluginSettings({
     hideWithSpotify: {
         description: "Skip Spotify tracks while Discord's own Spotify status already shows them",
         type: OptionType.BOOLEAN,
-        default: true
+        default: false
     },
     showAlbumArt: {
         description: "Show album art",
@@ -87,8 +87,7 @@ async function toActivity(p: Presence): Promise<Activity> {
         name: p.name,
         details: p.details,
         state: p.state,
-        // Show the song, not "eveamp", in the member list.
-        status_display_type: ActivityStatusDisplayType.DETAILS,
+        status_display_type: ActivityStatusDisplayType.NAME,
         assets,
         timestamps: { start: p.start, ...(p.end ? { end: p.end } : {}) },
         type: ActivityType.LISTENING,
@@ -105,9 +104,9 @@ async function tick() {
         let next = buildPresence(snap, Date.now(), settings.store.nameFormat);
         if (next?.isSpotify && settings.store.hideWithSpotify && spotifyShown()) next = null;
         if (needsUpdate(shown, next)) {
-            shown = next;
             const activity = next ? await toActivity(next) : null;
             if (gen !== generation) return;
+            shown = next;
             setActivity(activity);
         }
     } finally {
@@ -121,6 +120,20 @@ export default definePlugin({
     authors: [{ name: "Eve", id: 0n }],
     tags: ["Activity", "Media"],
     settings,
+
+    // Keep Discord's native Spotify card from competing with our activity
+    // while eveamp owns playback. Clearing our activity restores it.
+    patches: [{
+        find: "}getPlayableComputerDevices(){",
+        replacement: {
+            match: /shouldShowActivity\(\)\{/,
+            replace: "$&if($self.ownsSpotifyPresence())return false;"
+        }
+    }],
+
+    ownsSpotifyPresence() {
+        return running && !!shown?.isSpotify && !settings.store.hideWithSpotify;
+    },
 
     start() {
         running = true;
