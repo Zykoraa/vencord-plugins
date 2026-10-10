@@ -20,7 +20,7 @@ const Native = VencordNative.pluginHelpers.EveampPresence as PluginNative<typeof
 const APP_ID = "1108588077900898414";
 const SOCKET_ID = "EveampPresence";
 const POLL_MS = 2000;
-const LOGO_URL = "https://raw.githubusercontent.com/Zykoraa/vencord-plugins/main/eveampPresence/assets/motif.png";
+const LOGO_URL = "https://raw.githubusercontent.com/Zykoraa/vencord-plugins/main/eveampPresence/assets/motif-pride-star-v1.png";
 
 const settings = definePluginSettings({
     nameFormat: {

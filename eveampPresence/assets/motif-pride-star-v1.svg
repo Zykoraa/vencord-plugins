@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">Motif trans pride Star of David</title>
+  <desc id="desc">A six-pointed Star of David in blue, pink, white, pink and blue stripes on charcoal.</desc>
+  <defs>
+    <linearGradient id="pride" x1="0" y1="40" x2="0" y2="472" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#5BCEFA"/>
+      <stop offset=".2" stop-color="#5BCEFA"/>
+      <stop offset=".2" stop-color="#F5A9B8"/>
+      <stop offset=".4" stop-color="#F5A9B8"/>
+      <stop offset=".4" stop-color="#FFFFFF"/>
+      <stop offset=".6" stop-color="#FFFFFF"/>
+      <stop offset=".6" stop-color="#F5A9B8"/>
+      <stop offset=".8" stop-color="#F5A9B8"/>
+      <stop offset=".8" stop-color="#5BCEFA"/>
+      <stop offset="1" stop-color="#5BCEFA"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="128" fill="#17191F"/>
+  <g fill="none" stroke="url(#pride)" stroke-width="36" stroke-linejoin="miter">
+    <path d="M256 76 411.885 346 100.115 346Z"/>
+    <path d="M256 436 100.115 166 411.885 166Z"/>
+  </g>
+</svg>

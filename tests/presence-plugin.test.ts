@@ -24,7 +24,7 @@ async function harness() {
         "@utils/types": "export default x=>x; export const OptionType={SELECT:1,BOOLEAN:2};",
         "@vencord/discord-types/enums": `export const ActivityFlags={INSTANCE:1},
             ActivityStatusDisplayType={NAME:0},ActivityType={LISTENING:2};`,
-        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async(_,keys)=>keys.map(key=>key.includes("/assets/motif.png")?"logo":"cover")},
+        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async(_,keys)=>keys.map(key=>key.includes("/eveampPresence/assets/")?"logo":"cover")},
             AuthenticationStore={getId:()=>"self"},
             PresenceStore={getActivities:()=>[{type:2,name:"Spotify"}]},
             FluxDispatcher={dispatch:e=>events.push(e)};`
