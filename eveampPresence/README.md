@@ -3,6 +3,9 @@
 Shows what Motif (formerly eveamp; a personal fork of [cliamp](https://github.com/bjarneo/cliamp), the terminal music player) plays as a **Listening to** activity on your
 Discord profile, for every source Motif plays.
 
+The compact status in DM and member lists shows the current song title. The
+expanded profile card keeps **Listening to Motif** (or the selected Name setting).
+
 | Motif plays | Activity shows |
 | --- | --- |
 | A track (Spotify, YouTube Music, Navidrome, local file, ...) | Title, artist, album art, album, and a progress bar |

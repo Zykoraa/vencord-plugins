@@ -91,7 +91,7 @@ async function toActivity(p: Presence, showAlbumArt: boolean): Promise<Activity>
         name: p.name,
         details: p.details,
         state: p.state,
-        status_display_type: ActivityStatusDisplayType.NAME,
+        status_display_type: ActivityStatusDisplayType.DETAILS,
         assets,
         timestamps: { start: p.start, ...(p.end ? { end: p.end } : {}) },
         type: ActivityType.LISTENING,
