@@ -24,7 +24,7 @@ async function harness() {
         "@utils/types": "export default x=>x; export const OptionType={SELECT:1,BOOLEAN:2};",
         "@vencord/discord-types/enums": `export const ActivityFlags={INSTANCE:1},
             ActivityStatusDisplayType={NAME:0},ActivityType={LISTENING:2};`,
-        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async()=>["cover"]},
+        "@webpack/common": `export const ApplicationAssetUtils={fetchAssetIds:async(_,keys)=>keys.map(key=>key.includes("/assets/motif.png")?"logo":"cover")},
             AuthenticationStore={getId:()=>"self"},
             PresenceStore={getActivities:()=>[{type:2,name:"Spotify"}]},
             FluxDispatcher={dispatch:e=>events.push(e)};`
@@ -66,6 +66,7 @@ it("publishes the player's listening card even when native Spotify is present, t
     assert.equal(activity.status_display_type, 0, "show the player's name in the member list");
     assert.equal(activity.details, "A song");
     assert.equal(activity.state, "An artist");
+    assert.equal(activity.assets.large_image, "logo", "show Motif when there is no cover");
     assert.equal(activity.timestamps.end - activity.timestamps.start, 180000);
 
     const replacement = h.plugin.patches[0].replacement;
@@ -88,9 +89,12 @@ it("refreshes album art settings while the same song keeps playing", async () =>
     h.plugin.start();
     await h.settle();
     assert.equal(h.events.at(-1)?.activity.assets.large_image, "cover");
+    assert.equal(h.events.at(-1)?.activity.assets.small_image, "logo");
+    assert.equal(h.events.at(-1)?.activity.assets.small_text, "Motif");
     h.plugin.settings.store.showAlbumArt = false;
     await h.poll();
-    assert.equal(h.events.at(-1)?.activity.assets.large_image, undefined);
+    assert.equal(h.events.at(-1)?.activity.assets.large_image, "logo");
+    assert.equal(h.events.at(-1)?.activity.assets.small_image, undefined);
     h.plugin.settings.store.showAlbumArt = true;
     await h.poll();
     assert.equal(h.events.at(-1)?.activity.assets.large_image, "cover");

@@ -20,6 +20,7 @@ const Native = VencordNative.pluginHelpers.EveampPresence as PluginNative<typeof
 const APP_ID = "1108588077900898414";
 const SOCKET_ID = "EveampPresence";
 const POLL_MS = 2000;
+const LOGO_URL = "https://raw.githubusercontent.com/Zykoraa/vencord-plugins/main/eveampPresence/assets/motif.png";
 
 const settings = definePluginSettings({
     nameFormat: {
@@ -78,11 +79,13 @@ async function albumArt(url: string): Promise<string | undefined> {
 }
 
 async function toActivity(p: Presence, showAlbumArt: boolean): Promise<Activity> {
-    const assets: ActivityAssets = { large_text: p.largeText };
-    if (p.imageUrl && showAlbumArt) {
-        const image = await albumArt(p.imageUrl);
-        if (image) assets.large_image = image;
-    }
+    const [logo, cover] = await Promise.all([
+        albumArt(LOGO_URL),
+        p.imageUrl && showAlbumArt ? albumArt(p.imageUrl) : undefined
+    ]);
+    const assets: ActivityAssets = cover
+        ? { large_image: cover, large_text: p.largeText, small_image: logo, small_text: "Motif" }
+        : { large_image: logo, large_text: "Motif" };
     return {
         application_id: APP_ID,
         name: p.name,

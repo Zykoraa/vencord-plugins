@@ -19,6 +19,7 @@ Discord profile, for every source Motif plays.
   Bandcamp, TIDAL, Qobuz, Navidrome, Jellyfin, Emby, Lyrion, NetEase, Yandex, Audiobookshelf,
   podcasts, cliamp radio, other radio, and local files.
 - Album art goes through Discord's external image proxy, as Vencord's MusicRichPresence does.
+- The Motif logo appears as a small badge beside the album cover. Without a cover, or with album art disabled, the logo is the main image.
 
 ## Settings
 
