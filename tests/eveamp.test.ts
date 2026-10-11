@@ -19,7 +19,7 @@ import { after, before, describe, it } from "node:test";
 
 import { barsFromBands, EVEAMP_BANDS, isAudible, levelsFromBands, normalizeBands } from "../audioReactiveDisco/eveamp.ts";
 import { EveampClient, eveampSocketPath } from "../audioReactiveDisco/eveampClient.ts";
-import { buildPresence, fit, NameFormat, needsUpdate, providerLabel } from "../eveampPresence/presence.ts";
+import { activityLinks, buildPresence, fit, jamURL, NameFormat, needsUpdate, providerLabel, songURL } from "../eveampPresence/presence.ts";
 
 describe("disco band mapping", () => {
     it("brings a quiet band up to full scale against its own peak", () => {
@@ -120,6 +120,41 @@ describe("presence model", () => {
         assert.equal(buildPresence({ ...spotify, state: "paused" }, now), null);
         assert.equal(buildPresence({ ...spotify, state: "stopped" }, now), null);
         assert.equal(buildPresence({ state: "playing" }, now), null);
+    });
+
+    it("links Spotify songs and episodes without publishing private paths", () => {
+        assert.equal(songURL(spotify.track), "https://open.spotify.com/track/00ZOnzSIZXvO07SeVtxZdq");
+        assert.equal(songURL({ path: "spotify:episode:abc123" }), "https://open.spotify.com/episode/abc123");
+        for (const path of ["spotify:dj", "spotify:track:", "spotify:track:a?token=private", "/home/eve/Music/private.flac", "http://localhost:4533/rest/stream?token=private"]) {
+            assert.equal(songURL({ path }), undefined);
+        }
+        assert.equal(songURL({ path: "spotify:dj", listen_url: "https://open.spotify.com/track/current" }), "https://open.spotify.com/track/current");
+        assert.equal(songURL({ path: "spotify:dj", listen_url: "https://other.example/track/current" }), undefined);
+    });
+
+    it("publishes song and real Jam invite buttons, with matching URLs", () => {
+        const p = buildPresence(spotify, now)!;
+        const links = activityLinks(p, " https://spotify.link/myJam ");
+        assert.equal(links.details_url, p.songUrl);
+        assert.deepEqual(links.buttons, ["Open in Spotify", "Join Spotify Jam"]);
+        assert.deepEqual(links.metadata.button_urls, [p.songUrl, "https://spotify.link/myJam"]);
+        assert.deepEqual(activityLinks(p, "").buttons, ["Open in Spotify"]);
+        const local = buildPresence({ state: "playing", track: { path: "/private/song.flac" } }, now)!;
+        assert.equal(activityLinks(local, "https://spotify.link/myJam").buttons, undefined);
+    });
+
+    it("rejects malformed or non-Spotify Jam URLs without fetching them", () => {
+        for (const value of ["", "not a URL", "http://spotify.link/id", "https://localhost/jam", "https://spotify.link.other.example/id", "https://user:password@spotify.link/id", "https://spotify.link:444/id", "https://spotify.link/", "javascript:alert(1)"]) {
+            assert.equal(jamURL(value), undefined, value);
+        }
+        assert.equal(jamURL("https://open.spotify.com/socialsession/jam123"), "https://open.spotify.com/socialsession/jam123");
+    });
+
+    it("refreshes the DJ song link even when display metadata is unchanged", () => {
+        const dj = { ...spotify, track: { ...spotify.track, path: "spotify:dj", stream: true, listen_url: "https://open.spotify.com/track/first" } };
+        const a = buildPresence(dj, now);
+        const b = buildPresence({ ...dj, track: { ...dj.track, listen_url: "https://open.spotify.com/track/next" } }, now);
+        assert.equal(needsUpdate(a, b), true);
     });
 
     it("shows a radio's song over its station, with no end time", () => {

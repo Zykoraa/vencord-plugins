@@ -6,6 +6,20 @@ Discord profile, for every source Motif plays.
 The compact status in DM and member lists shows the current song title. The
 expanded profile card keeps **Listening to Motif** (or the selected Name setting).
 
+For Spotify songs and podcast episodes, the title and cover open the current item
+in Spotify, and the card includes an **Open in Spotify** button. This follows the
+current DJ song too, rather than linking to the DJ entry.
+
+To share a Jam on the Motif card, start a Jam in Spotify, copy its **Invite → Share
+link**, and paste it into **Jam invite URL** in this plugin's settings. Friends get
+a **Join Spotify Jam** button. Clear the setting when the Jam ends; the plugin
+does not create a Jam or renew an expired invite.
+
+Discord's built-in **Listen Along** belongs to the native Spotify integration.
+Enable **Prefer native Spotify** below to use that card for Spotify and Motif for
+other sources. Your Spotify account must be connected to Discord; otherwise the
+plugin falls back to the Motif card. Native Listen Along requires Spotify Premium.
+
 | Motif plays | Activity shows |
 | --- | --- |
 | A track (Spotify, YouTube Music, Navidrome, local file, ...) | Title, artist, album art, album, and a progress bar |
@@ -29,7 +43,8 @@ expanded profile card keeps **Listening to Motif** (or the selected Name setting
 | Setting | Default | Description |
 | --- | --- | --- |
 | **Name** | `Motif` | What "Listening to ..." names: `Motif`, the service, or the song. Title and artist appear in the profile card. |
-| **Skip Spotify while Discord shows it** | `off` | By default Motif shows its own card and temporarily hides the duplicate Spotify card. Turn this on to prefer Discord's native Spotify card. Pausing or closing Motif restores the native card. |
+| **Prefer native Spotify** | `off` | Keep this off for the Motif name, pride badge and song/Jam buttons. Turn it on for Discord's native Spotify card and its Listen Along controls when available. Pausing or closing Motif restores the native card. |
 | **Show album art** | `on` | Show the track's cover. |
+| **Jam invite URL** | empty | A real HTTPS invite on `spotify.link` or `open.spotify.com`, shown only during Spotify playback. |
 
 The plugin keeps the internal name **EveampPresence** and the existing socket path so saved settings and integrations keep working after the Motif rename.

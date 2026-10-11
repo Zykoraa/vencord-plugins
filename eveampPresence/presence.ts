@@ -13,6 +13,7 @@ export interface EveampTrack {
     album?: string;
     path: string;
     album_art_url?: string;
+    listen_url?: string;
     duration_secs?: number;
     stream?: boolean;
     stream_title?: string;
@@ -41,6 +42,7 @@ export interface Presence {
     state: string;
     largeText: string;
     imageUrl?: string;
+    songUrl?: string;
     provider: string;
     isSpotify: boolean;
     /** Unix ms the track started, as if it played without pause or seek. */
@@ -110,6 +112,36 @@ function basename(path: string) {
     return name.replace(/\.[a-z0-9]{1,5}$/i, "");
 }
 
+/** Only publish canonical Spotify song links; never expose a local stream URL. */
+export function songURL(track: EveampTrack): string | undefined {
+    if (track.listen_url && /^https:\/\/open\.spotify\.com\/(track|episode)\/[a-zA-Z0-9]+$/.test(track.listen_url)) return track.listen_url;
+    const match = /^spotify:(track|episode):([a-zA-Z0-9]+)$/.exec(track.path);
+    return match ? `https://open.spotify.com/${match[1]}/${match[2]}` : undefined;
+}
+
+/** A Jam invite is supplied by the host, not invented from the song ID. */
+export function jamURL(value: string): string | undefined {
+    try {
+        const url = new URL(value.trim());
+        if (url.protocol !== "https:" || url.username || url.password || url.port) return;
+        if (url.hostname !== "spotify.link" && url.hostname !== "open.spotify.com") return;
+        if (url.pathname === "/" || url.href.length > 512) return;
+        return url.href;
+    } catch { return; }
+}
+
+export function activityLinks(p: Presence, invite: string) {
+    const buttons: { label: string; url: string; }[] = [];
+    if (p.songUrl) buttons.push({ label: "Open in Spotify", url: p.songUrl });
+    const jam = p.isSpotify ? jamURL(invite) : undefined;
+    if (jam) buttons.push({ label: "Join Spotify Jam", url: jam });
+    return {
+        details_url: p.songUrl,
+        buttons: buttons.length ? buttons.map(b => b.label) : undefined,
+        metadata: { button_urls: buttons.map(b => b.url) }
+    };
+}
+
 // Discord rejects activity strings under 2 or over 128 characters.
 export function fit(s: string): string {
     const t = s.trim();
@@ -151,6 +183,7 @@ export function buildPresence(snap: EveampSnapshot | null, nowMs: number, nameFo
         state: fit(state),
         largeText: fit(t.album || provider),
         imageUrl: t.album_art_url || undefined,
+        songUrl: songURL(t),
         provider,
         isSpotify: t.path.startsWith("spotify:"),
         start,
@@ -168,5 +201,6 @@ export function needsUpdate(prev: Presence | null, next: Presence | null): boole
     const duration = (p: Presence) => p.end === undefined ? undefined : p.end - p.start;
     return prev.key !== next.key || Math.abs(prev.start - next.start) > START_TOLERANCE_MS
         || prev.imageUrl !== next.imageUrl || prev.largeText !== next.largeText
+        || prev.songUrl !== next.songUrl
         || duration(prev) !== duration(next);
 }

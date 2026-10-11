@@ -10,7 +10,7 @@ import { Activity, ActivityAssets } from "@vencord/discord-types";
 import { ActivityFlags, ActivityStatusDisplayType, ActivityType } from "@vencord/discord-types/enums";
 import { ApplicationAssetUtils, AuthenticationStore, FluxDispatcher, PresenceStore } from "@webpack/common";
 
-import { buildPresence, NameFormat, needsUpdate, Presence } from "./presence";
+import { activityLinks, buildPresence, NameFormat, needsUpdate, Presence } from "./presence";
 
 const Native = VencordNative.pluginHelpers.EveampPresence as PluginNative<typeof import("./native")>;
 
@@ -33,7 +33,7 @@ const settings = definePluginSettings({
         ]
     },
     hideWithSpotify: {
-        description: "Skip Spotify tracks while Discord's own Spotify status already shows them",
+        description: "Prefer the native Spotify card with Listen Along (falls back to Motif if Spotify is not connected)",
         type: OptionType.BOOLEAN,
         default: false
     },
@@ -41,6 +41,11 @@ const settings = definePluginSettings({
         description: "Show album art",
         type: OptionType.BOOLEAN,
         default: true
+    },
+    jamInviteUrl: {
+        description: "Optional Spotify Jam invite link for the Motif card. Paste the real invite from Spotify; clear it when the Jam ends.",
+        type: OptionType.STRING,
+        default: ""
     }
 });
 
@@ -48,6 +53,7 @@ let timer: ReturnType<typeof setTimeout> | null = null;
 let running = false;
 let shown: Presence | null = null;
 let shownAlbumArt = true;
+let shownJamInvite = "";
 // Bumped on stop, so an activity built across an await never lands after it.
 let generation = 0;
 const assetCache = new Map<string, string>();
@@ -78,13 +84,13 @@ async function albumArt(url: string): Promise<string | undefined> {
     }
 }
 
-async function toActivity(p: Presence, showAlbumArt: boolean): Promise<Activity> {
+async function toActivity(p: Presence, showAlbumArt: boolean, jamInvite: string): Promise<Activity> {
     const [logo, cover] = await Promise.all([
         albumArt(LOGO_URL),
         p.imageUrl && showAlbumArt ? albumArt(p.imageUrl) : undefined
     ]);
     const assets: ActivityAssets = cover
-        ? { large_image: cover, large_text: p.largeText, small_image: logo, small_text: "Motif" }
+        ? { large_image: cover, large_text: p.largeText, large_url: p.songUrl, small_image: logo, small_text: "Motif" }
         : { large_image: logo, large_text: "Motif" };
     return {
         application_id: APP_ID,
@@ -92,6 +98,7 @@ async function toActivity(p: Presence, showAlbumArt: boolean): Promise<Activity>
         details: p.details,
         state: p.state,
         status_display_type: ActivityStatusDisplayType.DETAILS,
+        ...activityLinks(p, jamInvite),
         assets,
         timestamps: { start: p.start, ...(p.end ? { end: p.end } : {}) },
         type: ActivityType.LISTENING,
@@ -107,13 +114,14 @@ async function tick() {
         if (gen !== generation) return;
         let next = buildPresence(snap, Date.now(), settings.store.nameFormat);
         if (next?.isSpotify && settings.store.hideWithSpotify && spotifyShown()) next = null;
-        if (needsUpdate(shown, next) || (next && shownAlbumArt !== settings.store.showAlbumArt)) {
-            const { showAlbumArt } = settings.store;
-            const activity = next ? await toActivity(next, showAlbumArt) : null;
+        if (needsUpdate(shown, next) || (next && (shownAlbumArt !== settings.store.showAlbumArt || shownJamInvite !== settings.store.jamInviteUrl))) {
+            const { showAlbumArt, jamInviteUrl } = settings.store;
+            const activity = next ? await toActivity(next, showAlbumArt, jamInviteUrl) : null;
             if (gen !== generation) return;
             setActivity(activity);
             shown = next;
             shownAlbumArt = showAlbumArt;
+            shownJamInvite = jamInviteUrl;
         }
     } finally {
         if (running && gen === generation) timer = setTimeout(tick, POLL_MS);
