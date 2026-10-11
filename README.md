@@ -1,8 +1,8 @@
 # Vencord plugins
 
-Eight userplugins for [Vencord](https://github.com/Vendicated/Vencord). All of them render their own UI
-locally — nothing is sent anywhere (EveampPresence's one exception: it sets your Discord activity, which
-is its job), and nothing here needs an API key or an external tracking server.
+Nine userplugins for [Vencord](https://github.com/Vendicated/Vencord). They run locally and need no
+API key or external tracking server. EveampPresence publishes your listening activity through Discord;
+BetterBananaStreamAudio selects the audio source for your Discord screen share.
 
 | Plugin | What it does |
 | --- | --- |
@@ -13,6 +13,7 @@ is its job), and nothing here needs an API key or an external tracking server.
 | [CallWrapped](#callwrapped) | Turns every voice call into a report card: talk time, interruptions, dead air, and a timeline of who had the mic |
 | [VoiceQualityHUD](#voicequalityhud) | A draggable overlay with live ping, jitter, packet loss and packet rates for the call you're in |
 | [CameraQualityLock](#cameraqualitylock) | Stops viewers from dropping your camera to 320x180 when they fullscreen your Go Live |
+| [BetterBananaStreamAudio](#betterbananastreamaudio) | Uses BetterBanana's stable mix for Linux whole-screen audio to reduce capture stalls when games recreate playback streams |
 | [ReplyGraph](#replygraph) | Draws a channel's reply structure as a force-directed graph so you can untangle four conversations at once |
 
 ## Install
@@ -119,6 +120,19 @@ shows it small.
 
 [More detail →](cameraQualityLock/README.md)
 
+## BetterBananaStreamAudio
+
+On Linux, games can repeatedly open and close playback streams while Discord captures your whole
+screen. This plugin selects the running BetterBanana mixer as the audio source, so Discord can
+capture a stable process instead. It checks every two seconds and follows mixer restarts while
+preserving manual audio off and application-specific shares.
+
+Requires desktop Discord with a custom Vencord build, [BetterBanana](https://github.com/Zykoraa/Linux-Apps/tree/main/BetterBanana),
+and a dedicated stream bus with BetterBanana's full stream guard enabled. The guard filters out
+monitoring buses and duplicate feeds; the plugin does not set up routing itself.
+
+[Setup, installation, and limitations →](betterBananaStreamAudio/README.md)
+
 ## ReplyGraph
 
 A button in the chat bar. Click it and the channel's loaded messages become a graph: each message
@@ -170,12 +184,13 @@ stops or quits.
 
 ## A note on what these can see
 
-These plugins only use data Discord has already handed the client, local audio inputs you explicitly select,
-or a local eveamp: who is speaking in a call you're in, your own connection stats, the messages already loaded in a channel,
-local audio streams via Web Audio API, or what a local eveamp reports over its socket. Nothing leaves
-your machine — CallWrapped's saved reports, the HUD positions, and AudioReactiveDisco's settings live in
-Vencord's local storage — except EveampPresence's activity, which Discord shows to others like any
-"Listening to" status.
+These plugins use data Discord has already handed the client, selected local audio inputs, or local
+player and mixer state: who is speaking in your call, your connection stats, messages already loaded
+in a channel, local audio streams, and what eveamp reports over its socket. BetterBananaStreamAudio
+reads Linux process identifiers to find your user's mixer and selects it for Discord's outgoing
+stream audio. EveampPresence publishes a normal Discord listening activity. There is no separate
+telemetry service. CallWrapped's saved reports, HUD positions, and AudioReactiveDisco's settings live
+in Vencord's local storage.
 
 CallWrapped does record when each person in a call spoke. That's derived from the same events that
 make the green ring appear around someone's avatar, so it's nothing the call didn't already show
