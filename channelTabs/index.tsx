@@ -6,7 +6,7 @@
 
 import ErrorBoundary from "@components/ErrorBoundary";
 import definePlugin from "@utils/types";
-import { ChannelStore, createRoot, NavigationRouter, SelectedChannelStore, SelectedGuildStore, showToast, Toasts } from "@webpack/common";
+import { ChannelStore, createRoot, NavigationRouter, SelectedChannelStore, SelectedGuildStore, showToast } from "@webpack/common";
 import type { Root } from "react-dom/client";
 
 import { ChannelTabBar } from "./ChannelTabBar";
@@ -170,7 +170,7 @@ function handleAuxClick(e: MouseEvent) {
         e.preventDefault();
         e.stopPropagation();
         openTab(channelData.channelId, channelData.guildId, { background: true });
-        showToast("Opened channel in background tab", Toasts.Type.MESSAGE);
+        showToast({ text: "Opened channel in background tab" });
     }
 }
 
@@ -186,7 +186,7 @@ function handleClick(e: MouseEvent) {
         e.preventDefault();
         e.stopPropagation();
         openTab(channelData.channelId, channelData.guildId, { background: true });
-        showToast("Opened channel in background tab", Toasts.Type.MESSAGE);
+        showToast({ text: "Opened channel in background tab" });
     }
 }
 

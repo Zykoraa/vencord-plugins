@@ -6,7 +6,7 @@
 
 import { ChatBarButton, ChatBarButtonFactory } from "@api/ChatButtons";
 import definePlugin, { IconProps } from "@utils/types";
-import { SelectedChannelStore, showToast, Toasts } from "@webpack/common";
+import { SelectedChannelStore, showToast } from "@webpack/common";
 
 import { openGraph } from "./GraphModal";
 import { settings } from "./settings";
@@ -61,7 +61,7 @@ export default definePlugin({
         "Reply graph for this channel"() {
             const channelId = SelectedChannelStore.getChannelId();
             if (channelId) openGraph(channelId);
-            else showToast("Open a channel first", Toasts.Type.MESSAGE);
+            else showToast({ text: "Open a channel first" });
         }
     }
 });

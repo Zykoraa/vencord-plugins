@@ -5,7 +5,7 @@
  */
 
 import * as DataStore from "@api/DataStore";
-import { ChannelRouter, ChannelStore, GuildStore, IconUtils, NavigationRouter, SelectedChannelStore, SelectedGuildStore, showToast, Toasts, UserStore } from "@webpack/common";
+import { ChannelRouter, ChannelStore, GuildStore, IconUtils, NavigationRouter, SelectedChannelStore, SelectedGuildStore, showToast, UserStore } from "@webpack/common";
 
 import { settings } from "./settings";
 import { SerializedTabsData, TabItem } from "./types";
@@ -365,12 +365,12 @@ export function jumpToTabIndex(index: number) {
 export function reopenClosedTab() {
     const restored = closedTabsHistory.pop();
     if (!restored) {
-        showToast("No recently closed tabs to reopen", Toasts.Type.FAILURE);
+        showToast({ text: "No recently closed tabs to reopen", variant: "critical" });
         return;
     }
 
     openTab(restored.channelId, restored.guildId, { pinned: restored.pinned });
-    showToast(`Reopened ${restored.title}`, Toasts.Type.SUCCESS);
+    showToast({ text: `Reopened ${restored.title}`, variant: "success" });
 }
 
 export function syncWithCurrentChannel(channelId: string, guildId: string | null = null) {

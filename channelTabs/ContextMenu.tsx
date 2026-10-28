@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
-import { ContextMenuApi, FluxDispatcher, Menu, ReadStateStore, showToast, Toasts } from "@webpack/common";
+import { ContextMenuApi, FluxDispatcher, Menu, ReadStateStore, showToast } from "@webpack/common";
 import type { MouseEvent as ReactMouseEvent } from "react";
 
 import { closeOtherTabs, closeTab, closeTabsToRight, togglePinTab } from "./state";
@@ -20,9 +20,9 @@ export function TabContextMenu({ tab }: TabContextMenuProps) {
     const handleCopyLink = async () => {
         try {
             await navigator.clipboard.writeText(channelLink);
-            showToast("Channel link copied to clipboard", Toasts.Type.SUCCESS);
+            showToast({ text: "Channel link copied to clipboard", variant: "success" });
         } catch {
-            showToast("Failed to copy link", Toasts.Type.FAILURE);
+            showToast({ text: "Failed to copy link", variant: "critical" });
         }
     };
 
@@ -46,7 +46,7 @@ export function TabContextMenu({ tab }: TabContextMenuProps) {
                     }]
                 });
             }
-            showToast(`Marked ${tab.title} as read`, Toasts.Type.SUCCESS);
+            showToast({ text: `Marked ${tab.title} as read`, variant: "success" });
         } catch (err) {
             console.error("[ChannelTabs] Mark as read error:", err);
         }

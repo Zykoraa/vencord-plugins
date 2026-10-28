@@ -6,7 +6,7 @@
 
 import { showNotification } from "@api/Notifications";
 import definePlugin from "@utils/types";
-import { showToast, Toasts } from "@webpack/common";
+import { showToast } from "@webpack/common";
 
 import { openHistory, openReport } from "./ReportModal";
 import { settings } from "./settings";
@@ -54,7 +54,7 @@ export default definePlugin({
         "Call Wrapped: last call"() {
             const [latest] = getReports();
             if (latest) openReport(latest);
-            else showToast("No calls recorded yet", Toasts.Type.MESSAGE);
+            else showToast({ text: "No calls recorded yet" });
         },
         "Call Wrapped: history"() {
             openHistory();

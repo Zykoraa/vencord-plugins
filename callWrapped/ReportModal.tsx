@@ -7,7 +7,7 @@
 import ErrorBoundary from "@components/ErrorBoundary";
 import { copyToClipboard } from "@utils/clipboard";
 import { RenderModalProps } from "@vencord/discord-types";
-import { Modal, openModal, showToast, Toasts, useEffect, useMemo, UserStore, useState } from "@webpack/common";
+import { Modal, openModal, showToast, useEffect, useMemo, UserStore, useState } from "@webpack/common";
 
 import { CallReport, formatDuration, formatShort, ParticipantStats, reportToText, SpeakSpan } from "./stats";
 import { clearReports, deleteReport, getReports, subscribeToReports } from "./tracker";
@@ -234,7 +234,7 @@ export function ReportModal({ report, ...props }: RenderModalProps & { report: C
                     variant: "secondary",
                     onClick: () => {
                         copyToClipboard(reportToText(report));
-                        showToast("Report copied - paste it into the chat", Toasts.Type.SUCCESS);
+                        showToast({ text: "Report copied - paste it into the chat", variant: "success" });
                     }
                 },
                 {
