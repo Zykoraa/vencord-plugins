@@ -48,6 +48,10 @@ Start a whole-screen share with **Share stream audio** enabled.
 
 - Checks every two seconds and changes active whole-screen audio to the running `bb-engine` PID.
 - Finds the mixer through `/proc`, checks that it belongs to your user, and follows PID changes.
+- Restarts the capture (audio off, then the mixer again, as re-ticking **Share stream audio**
+  does) once a burst of new PulseAudio streams has been quiet for 1.5 s. Wine opens a dozen
+  format-test streams when a game starts, and Discord's capture stops producing frames even
+  though the PID it targets never changed. Watched with `pactl subscribe`.
 - Leaves application-specific capture and manually disabled stream audio alone.
 - Restores whole-screen capture when disabled, preserving the current audio on/off state.
 - Leaves Discord's normal capture unchanged when the mixer or native helper is unavailable.

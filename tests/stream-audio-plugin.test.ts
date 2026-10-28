@@ -67,17 +67,18 @@ interface Connection {
     userId: string;
     streamUserId: string | undefined;
     calls: [number, boolean][];
-    setSoundshareSource(id: number, active: boolean): void;
+    setSoundshareSource(id: number, loopback: boolean): void;
 }
 
 function connection(id = 1, active = true, overrides: Partial<Connection> = {}): Connection {
     return {
         soundshareId: id, soundshareActive: active, destroyed: false,
         userId: "self", streamUserId: "self", calls: [],
-        setSoundshareSource(id, active) {
-            this.calls.push([id, active]);
+        // As Discord's: the second argument is soundshareLoopback, and does not
+        // switch audio on or off.
+        setSoundshareSource(id, loopback) {
+            this.calls.push([id, loopback]);
             this.soundshareId = id;
-            this.soundshareActive = active;
         },
         ...overrides
     };
@@ -86,7 +87,8 @@ function connection(id = 1, active = true, overrides: Partial<Connection> = {}):
 async function rendererHarness(connections: Connection[], context = "stream") {
     const state = {
         pid: 4242 as number | null, context, connections,
-        engineAvailable: true, lookupCalls: 0,
+        engineAvailable: true, lookupCalls: 0, now: 100_000,
+        burst: { burstAt: 0, lastEventAt: 0 },
         lookup: undefined as (() => Promise<number | null>) | undefined
     };
     const timers = new Map<number, () => void>();
@@ -106,8 +108,10 @@ async function rendererHarness(connections: Connection[], context = "stream") {
             getEnginePid() {
                 state.lookupCalls++;
                 return state.lookup?.() ?? Promise.resolve(state.pid);
-            }
+            },
+            getSinkInputBurst() { return Promise.resolve({ ...state.burst }); }
         } } },
+        Date: { now: () => state.now },
         setInterval(callback: () => void, delay: number) {
             assert.equal(delay, 2000);
             const id = ++nextTimer;
@@ -131,12 +135,12 @@ it("pins an active whole-screen share once and restores its source on stop", asy
     const c = connection();
     const h = await rendererHarness([c]);
     await h.start();
-    assert.deepEqual(c.calls, [[4242, true]]);
+    assert.deepEqual(c.calls, [[4242, false]]);
     await h.poll();
     await h.poll();
     assert.equal(c.calls.length, 1, "stable polling must not restart capture");
     h.plugin.stop();
-    assert.deepEqual(c.calls.at(-1), [1, true]);
+    assert.deepEqual(c.calls.at(-1), [1, false]);
     assert.equal(h.timers.size, 0);
 });
 
@@ -160,7 +164,7 @@ it("lets a user-selected application supersede an existing pin", async () => {
     c.soundshareId = 777;
     await h.poll();
     h.plugin.stop();
-    assert.deepEqual(c.calls, [[4242, true]]);
+    assert.deepEqual(c.calls, [[4242, false]]);
     assert.equal(c.soundshareId, 777);
 });
 
@@ -171,11 +175,11 @@ it("follows a mixer restart without enabling audio while it is switched off", as
     c.soundshareActive = false;
     h.state.pid = 5252;
     await h.poll();
-    assert.deepEqual(c.calls, [[4242, true]]);
+    assert.deepEqual(c.calls, [[4242, false]]);
     assert.equal(c.soundshareActive, false);
     c.soundshareActive = true;
     await h.poll();
-    assert.deepEqual(c.calls.at(-1), [5252, true]);
+    assert.deepEqual(c.calls.at(-1), [5252, false]);
     h.plugin.stop();
 });
 
@@ -201,10 +205,10 @@ it("waits for the mixer to become available and follows a replacement PID", asyn
     await h.poll();
     h.state.pid = null;
     await h.poll();
-    assert.deepEqual(c.calls, [[4242, true]], "an unavailable mixer must not broaden capture");
+    assert.deepEqual(c.calls, [[4242, false]], "an unavailable mixer must not broaden capture");
     h.state.pid = 5252;
     await h.poll();
-    assert.deepEqual(c.calls.at(-1), [5252, true]);
+    assert.deepEqual(c.calls.at(-1), [5252, false]);
     h.plugin.stop();
 });
 
@@ -214,7 +218,7 @@ it("ignores destroyed connections and incoming streams in a merged context", asy
     const destroyed = connection(1, true, { destroyed: true });
     const h = await rendererHarness([outgoing, incoming, destroyed], "default");
     await h.start();
-    assert.deepEqual(outgoing.calls, [[4242, true]]);
+    assert.deepEqual(outgoing.calls, [[4242, false]]);
     assert.deepEqual(incoming.calls, []);
     assert.deepEqual(destroyed.calls, []);
     outgoing.destroyed = true;
@@ -246,7 +250,7 @@ it("ignores an old pending result across a stop/start cycle", async () => {
     await h.start();
     pending.resolve(9999);
     await settle();
-    assert.deepEqual(c.calls, [[4242, true]]);
+    assert.deepEqual(c.calls, [[4242, false]]);
     assert.equal(h.timers.size, 1);
     h.plugin.stop();
 });
@@ -282,7 +286,64 @@ it("recovers after a native lookup rejection or an unavailable media engine", as
     assert.deepEqual(c.calls, []);
     h.state.engineAvailable = true;
     await h.poll();
-    assert.deepEqual(c.calls, [[4242, true]]);
+    assert.deepEqual(c.calls, [[4242, false]]);
+    h.plugin.stop();
+});
+
+it("restarts capture once a burst of new streams has settled", async () => {
+    const c = connection();
+    const h = await rendererHarness([c]);
+    await h.start();
+    assert.deepEqual(c.calls, [[4242, false]]);
+    await h.poll();                                      // capture start time noted
+
+    h.state.now += 10_000;                               // a game starts: Wine's format tests
+    h.state.burst = { burstAt: h.state.now, lastEventAt: h.state.now };
+    await h.poll();
+    assert.equal(c.calls.length, 1, "not while streams are still arriving");
+
+    h.state.now += 1_000;
+    await h.poll();
+    assert.equal(c.calls.length, 1, "not before the burst has settled");
+
+    h.state.now += 1_000;
+    await h.poll();
+    assert.deepEqual(c.calls.slice(1), [[0, false], [4242, false]], "off, then the mixer again");
+    assert.equal(c.soundshareId, 4242);
+
+    h.state.now += 10_000;
+    await h.poll();
+    assert.equal(c.calls.length, 3, "one restart per burst");
+    h.plugin.stop();
+});
+
+it("keeps the loopback flag Discord chose when restarting", async () => {
+    const c = connection();
+    const h = await rendererHarness([c]);
+    await h.start();
+    h.plugin.selectSource(4242, true, c);                // Discord's own call, seen by the patch
+    await h.poll();
+    h.state.now += 5_000;
+    h.state.burst = { burstAt: h.state.now - 3_000, lastEventAt: h.state.now - 3_000 };
+    await h.poll();
+    assert.deepEqual(c.calls.slice(-2), [[0, true], [4242, true]]);
+    h.plugin.stop();
+});
+
+it("ignores a burst from before capture started, and leaves audio that is off alone", async () => {
+    const c = connection();
+    const off = connection(1, false);
+    const h = await rendererHarness([c, off]);
+    h.state.burst = { burstAt: h.state.now - 60_000, lastEventAt: h.state.now - 60_000 };
+    await h.start();
+    await h.poll();
+    h.state.now += 5_000;
+    await h.poll();
+    assert.deepEqual(c.calls, [[4242, false]]);
+    h.state.burst = { burstAt: h.state.now, lastEventAt: h.state.now };
+    h.state.now += 5_000;
+    await h.poll();
+    assert.deepEqual(off.calls, []);
     h.plugin.stop();
 });
 
@@ -295,7 +356,8 @@ interface ProcessEntry {
 async function nativeHarness(entries: [number, ProcessEntry][] = []) {
     const state = {
         platform: "linux", uid: 1000, hasGetuid: true, unavailable: false,
-        processes: new Map(entries), scans: 0, validations: 0
+        processes: new Map(entries), scans: 0, validations: 0, now: 0,
+        spawned: [] as { args: string[]; emit(line: string): void; exit(): void; }[]
     };
     const lookup = (path: string): ProcessEntry => {
         const match = /^\/proc\/(\d+)(?:\/exe)?$/.exec(path);
@@ -323,21 +385,74 @@ async function nativeHarness(entries: [number, ProcessEntry][] = []) {
         },
         readlinkSync(path: string) { return lookup(path).executable; }
     };
+    function fakeSpawn(command: string, args: string[]) {
+        const handlers: Record<string, ((arg?: any) => void)[]> = {};
+        const on = (event: string, fn: (arg?: any) => void) => { (handlers[event] ??= []).push(fn); };
+        const child = { stdout: { on }, on, kill() {} };
+        state.spawned.push({
+            args: [command, ...args],
+            emit: line => handlers.data?.forEach(fn => fn(Buffer.from(line + "\n"))),
+            exit: () => handlers.exit?.forEach(fn => fn())
+        });
+        return child;
+    }
     const sandbox: any = {
         module: { exports: {} },
+        Date: { now: () => state.now },
+        Buffer,
         process: {
+            once() {},
             get platform() { return state.platform; },
             get getuid() { return state.hasGetuid ? () => state.uid : undefined; }
         },
         require(name: string) {
             if (name === "fs" || name === "node:fs") return fs;
             if (name === "path" || name === "node:path") return { basename };
+            if (name === "child_process" || name === "node:child_process") return { spawn: fakeSpawn };
             throw new Error(`unmocked native import: ${name}`);
         }
     };
     runInNewContext(await compileNative(), sandbox);
-    return { state, getPid: () => sandbox.module.exports.getEnginePid(null) as number | null };
+    return {
+        state,
+        getPid: () => sandbox.module.exports.getEnginePid(null) as number | null,
+        getBurst: () => ({ ...sandbox.module.exports.getSinkInputBurst(null) }) as { burstAt: number; lastEventAt: number; }
+    };
 }
+
+it("reports a burst of new sink-inputs, not ordinary single streams", async () => {
+    const h = await nativeHarness();
+    assert.deepEqual(h.getBurst(), { burstAt: 0, lastEventAt: 0 });
+    assert.equal(h.state.spawned.length, 1);
+    assert.deepEqual(h.state.spawned[0].args, ["pactl", "subscribe"]);
+    const pactl = h.state.spawned[0];
+
+    h.state.now = 1_000;
+    pactl.emit("Event 'new' on sink-input #10");         // a browser starting a video
+    pactl.emit("Event 'change' on sink-input #10");
+    pactl.emit("Event 'new' on sink #3");
+    h.state.now = 5_000;
+    pactl.emit("Event 'new' on sink-input #11");
+    assert.deepEqual(h.getBurst(), { burstAt: 0, lastEventAt: 5_000 });
+
+    for (let i = 0; i < 12; i++) {                       // Wine's format tests
+        h.state.now = 10_000 + i * 30;
+        pactl.emit(`Event 'new' on sink-input #${100 + i}`);
+    }
+    assert.deepEqual(h.getBurst(), { burstAt: 10_330, lastEventAt: 10_330 });
+    assert.equal(h.state.spawned.length, 1, "one watcher");
+
+    pactl.exit();                                        // pipewire-pulse restarted
+    h.getBurst();
+    assert.equal(h.state.spawned.length, 2, "and a new one after it exits");
+});
+
+it("does not watch PulseAudio on other platforms", async () => {
+    const h = await nativeHarness();
+    h.state.platform = "darwin";
+    h.getBurst();
+    assert.equal(h.state.spawned.length, 0);
+});
 
 it("resolves only a same-user bb-engine executable from accessible PID directories", async () => {
     const h = await nativeHarness([
